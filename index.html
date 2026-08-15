@@ -4,152 +4,43 @@
     <meta charset="UTF-8">
     <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>😻 또치의 방치 RPG 😻</title>
-    <!-- Firebase SDK 로드 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none;
-        }
-        body { 
-            background-color: #121212; 
-            color: #fff; 
-            padding: 10px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start;
-            min-height: 100vh;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body { background-color: #121212; color: #fff; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        .game-wrapper { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 10px; transition: max-width 0.3s ease; }
         
-        .game-wrapper {
-            width: 100%;
-            max-width: 600px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            transition: max-width 0.3s ease;
-        }
+        .navigation-bar { display: flex; gap: 4px; position: sticky; top: 0; z-index: 1000; background: #121212; padding: 6px 0; border-bottom: 1px solid #222; }
+        .tab-btn, .mode-toggle-btn { background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 8px; padding: 8px 0; font-size: 0.8rem; font-weight: bold; text-align: center; cursor: pointer; flex: 1; }
+        .tab-btn.active { background: #e67e22; color: #fff; border-color: #e67e22; }
+        .mode-toggle-btn { background: #3498db; color: #fff; border-color: #2980b9; flex: 1.2; white-space: nowrap; }
 
-        /* 네비게이션 바 */
-        .navigation-bar {
-            display: flex;
-            gap: 4px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: #121212;
-            padding: 6px 0;
-            border-bottom: 1px solid #222;
-        }
-
-        .tab-btn, .mode-toggle-btn { 
-            background: #2a2a2a; 
-            color: #aaa; 
-            border: 1px solid #444; 
-            border-radius: 8px; 
-            padding: 8px 0; 
-            font-size: 0.8rem; 
-            font-weight: bold; 
-            text-align: center;
-            cursor: pointer;
-            flex: 1;
-        }
-        .tab-btn.active { 
-            background: #e67e22; 
-            color: #fff; 
-            border-color: #e67e22; 
-        }
-        .mode-toggle-btn {
-            background: #3498db;
-            color: #fff;
-            border-color: #2980b9;
-            flex: 1.2;
-            white-space: nowrap;
-        }
-
-        /* 모바일 모드 */
         body.mobile-mode .tab-content { display: none; }
         body.mobile-mode .tab-content.active { display: block; }
+        body.pc-mode .game-wrapper { max-width: 980px; }
+        body.pc-mode .navigation-bar { justify-content: flex-end; }
+        body.pc-mode .tab-btn { display: none; }
+        body.pc-mode .mode-toggle-btn { flex: 0 0 140px; }
+        body.pc-mode .tab-content { display: block !important; }
+        body.pc-mode .pc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        body.pc-mode .pc-full-width { grid-column: span 2; }
 
-        /* PC 모드 */
-        body.pc-mode .game-wrapper {
-            max-width: 980px;
-        }
-        body.pc-mode .navigation-bar {
-            justify-content: flex-end;
-        }
-        body.pc-mode .tab-btn {
-            display: none;
-        }
-        body.pc-mode .mode-toggle-btn {
-            flex: 0 0 140px;
-        }
-        body.pc-mode .tab-content {
-            display: block !important;
-        }
-        body.pc-mode .pc-grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        body.pc-mode .pc-full-width {
-            grid-column: span 2;
-        }
-
-        /* 카드 및 기타 UI */
-        .card { 
-            background: #1e1e1e; 
-            border-radius: 12px; 
-            padding: 14px; 
-            border: 1px solid #333; 
-            margin-bottom: 10px;
-        }
-        
-        h2 { 
-            border-bottom: 2px solid #444; 
-            padding-bottom: 8px; 
-            margin-bottom: 12px; 
-            font-size: 1rem; 
-            color: #f1c40f; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        .card { background: #1e1e1e; border-radius: 12px; padding: 14px; border: 1px solid #333; margin-bottom: 10px; }
+        h2 { border-bottom: 2px solid #444; padding-bottom: 8px; margin-bottom: 12px; font-size: 1rem; color: #f1c40f; display: flex; justify-content: space-between; align-items: center; }
         h3 { font-size: 0.9rem; color: #e67e22; margin-bottom: 6px; }
 
         .bar-container { background: #333; border-radius: 8px; height: 14px; width: 100%; overflow: hidden; margin: 3px 0 8px 0; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
-        .hp-fill { background: #e74c3c; }
-        .mp-fill { background: #3498db; }
-        .exp-fill { background: #f39c12; }
+        .hp-fill { background: #e74c3c; } .mp-fill { background: #3498db; } .exp-fill { background: #f39c12; }
         
-        button { 
-            background: #34495e; 
-            color: white; 
-            border: none; 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.15s; 
-            font-size: 0.85rem; 
-            min-height: 36px; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
+        button { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.15s; font-size: 0.85rem; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
         button:active { transform: scale(0.97); opacity: 0.9; }
         button:disabled { background: #444 !important; color: #777 !important; cursor: not-allowed; opacity: 0.6; transform: none; }
         
         .stage-control { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; }
         .stage-btn { background: #e67e22; padding: 6px 12px; min-height: 34px; }
-        
         .shop-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 8px 10px; margin-bottom: 6px; border-radius: 6px; font-size: 0.85rem; }
         .shop-equipped-panel { background: #151515; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.85rem; }
         .equipped-item-box { background: #222; border-left: 3px solid #f1c40f; padding: 6px 8px; margin-top: 4px; border-radius: 4px; }
@@ -157,45 +48,31 @@
         #log-box { height: 260px; overflow-y: auto; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 10px; font-size: 0.8rem; line-height: 1.5; -webkit-overflow-scrolling: touch; }
         .log-line { margin-bottom: 4px; }
         
-        /* 등급 색상 */
-        .rarity-일반 { color: #bdc3c7; }
-        .rarity-고급 { color: #2ecc71; }
-        .rarity-희귀 { color: #3498db; }
-        .rarity-영웅 { color: #9b59b6; }
-        .rarity-전설 { color: #f1c40f; font-weight: bold; }
-        .rarity-신화 { color: #e67e22; font-weight: bold; }
-        .rarity-초월 { color: #e74c3c; font-weight: bold; }
+        .rarity-일반 { color: #bdc3c7; } .rarity-고급 { color: #2ecc71; } .rarity-희귀 { color: #3498db; }
+        .rarity-영웅 { color: #9b59b6; } .rarity-전설 { color: #f1c40f; font-weight: bold; }
+        .rarity-신화 { color: #e67e22; font-weight: bold; } .rarity-초월 { color: #e74c3c; font-weight: bold; }
         .rarity-신성 { color: #00ffff; font-weight: bold; text-shadow: 0 0 5px #00ffff; }
         
         .item-hover { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; display: inline-block; }
 
-        /* 툴팁 모달 */
-        #item-tooltip {
-            position: fixed; display: none; width: 85%; max-width: 320px; background: rgba(20, 20, 25, 0.98);
-            border: 2px solid #f1c40f; border-radius: 12px; padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.9);
-            z-index: 9999; font-size: 0.85rem; line-height: 1.4; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%);
-        }
+        #item-tooltip { position: fixed; display: none; width: 85%; max-width: 320px; background: rgba(20, 20, 25, 0.98); border: 2px solid #f1c40f; border-radius: 12px; padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.9); z-index: 9999; font-size: 0.85rem; line-height: 1.4; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); }
         .tooltip-header { text-align: center; border-bottom: 1px solid #444; padding-bottom: 6px; margin-bottom: 6px; }
         .tooltip-title { font-weight: bold; font-size: 0.95rem; }
         .tooltip-rarity { font-size: 0.75rem; margin-top: 2px; }
         .tooltip-stat { color: #2ecc71; font-weight: bold; margin-bottom: 6px; }
-        .tooltip-effect { color: #f1c40f; font-size: 0.75rem; background: rgba(241, 196, 15, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed #f1c40f; margin-top: 4px; }
+        .tooltip-effect { color: #f1c40f; font-size: 0.75rem; background: rgba(241, 196, 15, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed #f1c40f; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
         .tooltip-desc { color: #aaa; font-size: 0.75rem; margin-top: 6px; border-top: 1px solid #333; padding-top: 6px; }
 
         .rune-badge { display: block; background: #222; padding: 8px; border-radius: 6px; margin-bottom: 6px; border: 1px solid #444; font-size: 0.8rem; }
         .buff-badge { display: inline-block; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 2px; }
         .skill-type-tag { font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-right: 4px; }
-        .tag-active { background: #e74c3c; color: #fff; }
-        .tag-buff { background: #f39c12; color: #fff; }
-        .tag-passive { background: #2980b9; color: #fff; }
+        .tag-active { background: #e74c3c; color: #fff; } .tag-buff { background: #f39c12; color: #fff; } .tag-passive { background: #2980b9; color: #fff; }
         
         .loot-grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 130px; overflow-y: auto; background: #111; padding: 8px; border-radius: 6px; border: 1px solid #222; -webkit-overflow-scrolling: touch; }
         .loot-item { background: #222; border: 1px solid #444; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
-        
         .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.85rem; }
         .stat-row button { min-height: 30px; padding: 2px 8px; }
 
-        /* --- 랭킹 UI 전용 스타일 --- */
         .ranking-tab-bar { display: flex; gap: 6px; margin-bottom: 10px; }
         .ranking-sub-btn { background: #222; border: 1px solid #444; color: #aaa; padding: 6px; border-radius: 6px; flex: 1; font-size: 0.8rem; cursor: pointer; text-align: center; }
         .ranking-sub-btn.active { background: #f39c12; color: #fff; font-weight: bold; border-color: #f39c12; }
@@ -203,14 +80,12 @@
         .ranking-item { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; }
         .ranking-item:last-child { border-bottom: none; }
         .rank-badge { font-weight: bold; width: 25px; display: inline-block; }
-        .rank-1 { color: #f1c40f; }
-        .rank-2 { color: #bdc3c7; }
-        .rank-3 { color: #e67e22; }
+        .rank-1 { color: #f1c40f; } .rank-2 { color: #bdc3c7; } .rank-3 { color: #e67e22; }
     </style>
 </head>
 <body class="mobile-mode">
 
-<div id="item-tooltip" onclick="hideTooltip()">
+<div id="item-tooltip">
     <div class="tooltip-header">
         <div id="tt-title" class="tooltip-title">아이템 이름</div>
         <div id="tt-rarity" class="tooltip-rarity">등급</div>
@@ -218,11 +93,12 @@
     <div id="tt-stat" class="tooltip-stat">공격력 +0</div>
     <div id="tt-effects-list"></div>
     <div id="tt-desc" class="tooltip-desc">설명</div>
-    <div style="text-align: center; margin-top: 8px; color: #666; font-size: 0.7rem;">(터치하여 닫기)</div>
+    <div style="text-align: center; margin-top: 8px;">
+        <button onclick="hideTooltip()" style="padding: 2px 10px; font-size:0.75rem;">닫기</button>
+    </div>
 </div>
 
 <div class="game-wrapper">
-    <!-- 네비게이션 바 -->
     <div class="navigation-bar">
         <div id="tab-btn-status" class="tab-btn active" onclick="switchTab('tab-status', this)">👤 상태</div>
         <div id="tab-btn-ranking" class="tab-btn" onclick="switchTab('tab-ranking', this)">🏆 랭킹</div>
@@ -232,7 +108,6 @@
         <button class="mode-toggle-btn" onclick="toggleViewMode()">🖥️ PC버전</button>
     </div>
 
-    <!-- PC 모드 레이아웃 -->
     <div class="pc-grid-2">
         <!-- 1. 용사 상태 및 스탯 -->
         <div id="tab-status" class="tab-content active">
@@ -245,6 +120,7 @@
                     <strong id="p-name" style="color: #f1c40f; font-size: 1.05rem;">지존용사</strong> (Lv.<span id="p-level">1</span>)
                 </div>
                 <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
+                <div>🧊 <strong>큐브:</strong> <span id="p-cubes" style="color:#00ffff; font-weight:bold;">0</span>개</div>
                 <div style="margin-top: 8px;">
                     <small>체력 (HP)</small>
                     <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
@@ -258,8 +134,9 @@
                 <div style="font-size: 0.85rem; color:#e74c3c;">🔥 최고 데미지: <span id="p-max-dmg">0</span></div>
                 <div id="active-buffs-list" style="margin-top: 6px; min-height: 20px;"></div>
                 <div style="margin-top: 8px; font-size: 0.85rem; background: #222; padding: 10px; border-radius: 8px;">
-                    🗡️ 무기: <span id="p-weapon" class="rarity-일반 item-hover" onclick="showTooltip(event, player.weapon)">목검 (+5)</span><br>
-                    🛡️ 방어구: <span id="p-armor" class="rarity-일반 item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span>
+                    🗡️ 무기: <span id="p-weapon" class="item-hover" onclick="showTooltip(event, player.weapon)">목검 (+5)</span><br>
+                    🛡️ 방어구: <span id="p-armor" class="item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span><br>
+                    🔮 보조장비: <span id="p-subweapon" class="item-hover" onclick="showTooltip(event, player.subWeapon)">낡은 부적 (+2)</span>
                 </div>
                 <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                     <button onclick="usePotion('hp')" style="background: #c0392b; width: 100%;">❤️ HP 포션 (<span id="p-potions">2</span>)</button>
@@ -310,13 +187,17 @@
                     <button onclick="addHyperStat('gold')" style="background:#8e44ad;">+1 Pt</button>
                 </div>
                 <div class="stat-row">
-                    <span>👑 보스 데미지: +<span id="hstat-boss">0</span>%</span>
-                    <button onclick="addHyperStat('boss')" style="background:#8e44ad;">+1 Pt</button>
+                    <span>🧊 큐브 드랍률: +<span id="hstat-cube">0</span>%</span>
+                    <button onclick="addHyperStat('cube')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>💎 룬 조각 드랍률: +<span id="hstat-shard">0</span>%</span>
+                    <button onclick="addHyperStat('shard')" style="background:#8e44ad;">+1 Pt</button>
                 </div>
             </div>
         </div>
 
-        <!-- ONLINE LEADERBOARD TAB -->
+        <!-- 랭킹 -->
         <div id="tab-ranking" class="tab-content">
             <div class="card">
                 <h2>
@@ -367,11 +248,15 @@
                             <div class="equipped-item-box">
                                 🛡️ <span id="shop-a-info" class="item-hover" onclick="showTooltip(event, player.armor)">-</span>
                             </div>
+                            <div class="equipped-item-box">
+                                🔮 <span id="shop-sub-info" class="item-hover" onclick="showTooltip(event, player.subWeapon)">-</span>
+                            </div>
                         </div>
 
                         <h3>🎲 장비 및 포션 구매</h3>
                         <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 6px;">🗡️ 랜덤 무기 (<span id="cost-weapon">100</span>G)</button>
-                        <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 10px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
+                        <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 6px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
+                        <button onclick="buyRandomItem('subWeapon')" style="background:#8e44ad; width: 100%; margin-bottom: 10px;">🔮 랜덤 보조장비 (<span id="cost-subWeapon">100</span>G)</button>
                         
                         <div class="shop-item">
                             <div>
@@ -433,47 +318,20 @@
 </div>
 
 <script>
-    // ---------------- [Firebase 데이터베이스 연동] ----------------
-    // ※ 주의: 개인 Firebase 주소를 입력해 주셔야 실제 공유 랭킹이 동작합니다.
-    const firebaseConfig = {
-        databaseURL: "https://rpg-rank-default-rtdb.asia-southeast1.firebasedatabase.app/" 
-    };
-    
+    const firebaseConfig = { databaseURL: "YOUR_FIREBASE_URL_HERE" };
     let db = null;
     try {
         if (firebaseConfig.databaseURL !== "YOUR_FIREBASE_URL_HERE") {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
         }
-    } catch(e) { console.log("Firebase 연동 준비 필요"); }
-
-    const randomMonsterPool = [
-        { name: "고블린", loot: "고블린 머리띠", val: 20 },
-        { name: "스켈레톤", loot: "단단한 뼈조각", val: 30 },
-        { name: "슬라임", loot: "슬라임 젤리", val: 15 },
-        { name: "오크 전사", loot: "오크의 어금니", val: 45 },
-        { name: "워그", loot: "늑대 가죽", val: 35 },
-        { name: "드래곤", loot: "용의 비늘", val: 150 },
-        { name: "골렘", loot: "골렘 코어", val: 80 },
-        { name: "리치", loot: "마력이 감도는 뼈", val: 110 },
-        { name: "가고일", loot: "돌 날개 파편", val: 65 },
-        { name: "서큐버스", loot: "악마의 날개", val: 120 }
-    ];
-
-    const monsterPrefixes = [
-        { name: "단단한", hpMult: 1.5, atkMult: 1.0, isElite: false },
-        { name: "광폭한", hpMult: 1.1, atkMult: 1.4, isElite: false },
-        { name: "👑 [엘리트]", hpMult: 2.2, atkMult: 1.6, isElite: true },
-        { name: "🔥 [네임드]", hpMult: 2.8, atkMult: 1.8, isElite: true }
-    ];
-
-    const bossTitles = ["파멸의", "심연의", "저주받은", "지옥의", "태초의"];
+    } catch(e) {}
 
     const itemData = {
         rarities: [
-            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 0 },
+            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1 },
             { name: "고급", mult: 1.3, color: "rarity-고급", chance: 0.25, effectCount: 1 },
-            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 1 },
+            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 2 },
             { name: "영웅", mult: 2.3, color: "rarity-영웅", chance: 0.11, effectCount: 2 },
             { name: "전설", mult: 3.2, color: "rarity-전설", chance: 0.06, effectCount: 3 },
             { name: "신화", mult: 4.5, color: "rarity-신화", chance: 0.03, effectCount: 3 },
@@ -482,49 +340,16 @@
         ],
         weaponBases: ["단검", "장검", "메이스", "대검", "배틀액스", "창", "지팡이"],
         armorBases: ["천 옷", "가죽 갑옷", "사슬 갑옷", "플레이트 아머", "용비늘 갑옷"],
+        subWeaponBases: ["구슬", "부적", "방패", "마도서", "방울"],
         prefixes: ["날카로운", "묵직한", "불타는", "얼어붙은", "신성한", "빛나는"],
         suffixes: ["강철", "파멸", "보석", "용기", "질풍", "분노", "제왕"]
     };
 
     const specialEffectsPool = [
-        { 
-            id: "INSTANT_KILL", name: "💀 즉사", type: "chance", 
-            tierStats: [
-                { minC: 0, maxC: 0 }, { minC: 1, maxC: 1 }, { minC: 1, maxC: 2 },
-                { minC: 2, maxC: 3 }, { minC: 3, maxC: 5 }, { minC: 4, maxC: 6 },
-                { minC: 5, maxC: 8 }, { minC: 7, maxC: 10 }
-            ],
-            desc: "공격 시 {chance}% 확률로 몬스터 즉사" 
-        },
-        { 
-            id: "LIFE_STEAL", name: "🩸 흡혈", type: "lifesteal", 
-            tierStats: [
-                { minC: 0, maxC: 0, minV: 0, maxV: 0 }, { minC: 5, maxC: 10, minV: 5, maxV: 10 },
-                { minC: 8, maxC: 15, minV: 8, maxV: 15 }, { minC: 12, maxC: 20, minV: 12, maxV: 20 },
-                { minC: 15, maxC: 25, minV: 15, maxV: 25 }, { minC: 20, maxC: 30, minV: 20, maxV: 30 },
-                { minC: 25, maxC: 40, minV: 25, maxV: 35 }, { minC: 30, maxC: 50, minV: 30, maxV: 40 }
-            ],
-            desc: "공격 시 {chance}% 확률로 준 피해의 {val}% HP 회복" 
-        },
-        { 
-            id: "DOUBLE_ATTACK", name: "⚡ 더블 어택", type: "chance", 
-            tierStats: [
-                { minC: 0, maxC: 0 }, { minC: 5, maxC: 8 }, { minC: 8, maxC: 12 },
-                { minC: 10, maxC: 18 }, { minC: 15, maxC: 22 }, { minC: 20, maxC: 28 },
-                { minC: 25, maxC: 35 }, { minC: 30, maxC: 40 }
-            ],
-            desc: "공격 시 {chance}% 확률로 2배 데미지" 
-        },
-        { 
-            id: "MP_RECOVER", name: "🔮 마나 샘", type: "mprecover", 
-            tierStats: [
-                { minC: 0, maxC: 0, minV: 0, maxV: 0 }, { minC: 5, maxC: 10, minV: 5, maxV: 15 },
-                { minC: 8, maxC: 15, minV: 10, maxV: 25 }, { minC: 12, maxC: 20, minV: 15, maxV: 35 },
-                { minC: 15, maxC: 25, minV: 25, maxV: 50 }, { minC: 20, maxC: 30, minV: 35, maxV: 65 },
-                { minC: 25, maxC: 40, minV: 45, maxV: 80 }, { minC: 30, maxC: 50, minV: 60, maxV: 100 }
-            ],
-            desc: "공격 시 {chance}% 확률로 MP {val} 회복" 
-        }
+        { id: "INSTANT_KILL", name: "💀 즉사", type: "chance", tierStats: [{minC:0,maxC:0},{minC:1,maxC:1},{minC:1,maxC:2},{minC:2,maxC:3},{minC:3,maxC:5},{minC:4,maxC:6},{minC:5,maxC:8},{minC:7,maxC:10}], desc: "공격 시 {chance}% 확률로 몬스터 즉사" },
+        { id: "LIFE_STEAL", name: "🩸 흡혈", type: "lifesteal", tierStats: [{minC:0,maxC:0,minV:0,maxV:0},{minC:5,maxC:10,minV:5,maxV:10},{minC:8,maxC:15,minV:8,maxV:15},{minC:12,maxC:20,minV:12,maxV:20},{minC:15,maxC:25,minV:15,maxV:25},{minC:20,maxC:30,minV:20,maxV:30},{minC:25,maxC:40,minV:25,maxV:35},{minC:30,maxC:50,minV:30,maxV:40}], desc: "공격 시 {chance}% 확률로 준 피해의 {val}% HP 회복" },
+        { id: "DOUBLE_ATTACK", name: "⚡ 더블 어택", type: "chance", tierStats: [{minC:0,maxC:0},{minC:5,maxC:8},{minC:8,maxC:12},{minC:10,maxC:18},{minC:15,maxC:22},{minC:20,maxC:28},{minC:25,maxC:35},{minC:30,maxC:40}], desc: "공격 시 {chance}% 확률로 2배 데미지" },
+        { id: "MP_RECOVER", name: "🔮 마나 샘", type: "mprecover", tierStats: [{minC:0,maxC:0,minV:0,maxV:0},{minC:5,maxC:10,minV:5,maxV:15},{minC:8,maxC:15,minV:10,maxV:25},{minC:12,maxC:20,minV:15,maxV:35},{minC:15,maxC:25,minV:25,maxV:50},{minC:20,maxC:30,minV:35,maxV:65},{minC:25,maxC:40,minV:45,maxV:80},{minC:30,maxC:50,minV:60,maxV:100}], desc: "공격 시 {chance}% 확률로 MP {val} 회복" }
     ];
 
     const runeTypes = [
@@ -537,478 +362,147 @@
     ];
 
     const skillList = [
-        { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 피해를 줍니다." },
-        { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 30, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격 피해" },
-        { id: 2, category: "active", name: "🩸 흡혈 베기", costMp: 25, mult: 2.0, healPercent: 0.3, price: 800, learned: false, level: 0, desc: "피해를 주고 HP 회복" },
-        { id: 3, category: "active", name: "❄️ 프로스트 노바", costMp: 35, mult: 3.0, price: 1200, learned: false, level: 0, desc: "얼음 파동 폭발 피해" },
-        { id: 4, category: "active", name: "☄️ 메테오 스트라이크", costMp: 60, mult: 5.5, price: 2500, learned: false, level: 0, desc: "운석을 떨어뜨려 치명적인 피해" },
-        { id: 5, category: "active", name: "⚔️ 궁극: 십자베기", costMp: 80, mult: 8.0, price: 5000, learned: false, level: 0, desc: "빛의 속도로 교차 공격" },
-        
-        { id: 10, category: "buff", name: "⚔️ 분노의 포효", costMp: 35, duration: 5, buffAtkPercent: 0.20, price: 400, learned: false, level: 0, desc: "5턴 동안 공격력 상승 버프" },
-        { id: 11, category: "buff", name: "🛡️ 수호자의 의지", costMp: 30, duration: 5, buffHpPercent: 0.25, price: 600, learned: false, level: 0, desc: "5턴 동안 최대 HP 수치 증가" },
-        { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 40, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률 상승" },
-        { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 70, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력 폭발적 상승" },
-
+        { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구 피해" },
+        { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 30, mult: 3.5, price: 500, learned: false, level: 0, desc: "번개 일격 피해" },
+        { id: 10, category: "buff", name: "⚔️ 분노의 포효", costMp: 35, duration: 5, buffAtkPercent: 0.20, price: 400, learned: false, level: 0, desc: "5턴 동안 공격력 상승" },
         { id: 20, category: "passive", name: "🏋️ 단련된 육체", statType: "hpPercent", valPerLevel: 0.08, price: 300, learned: false, level: 0, desc: "상시 최대 HP 증가" },
         { id: 21, category: "passive", name: "🗡️ 날카로운 칼날", statType: "atkPercent", valPerLevel: 0.05, price: 500, learned: false, level: 0, desc: "상시 공격력 증가" },
-        { id: 22, category: "passive", name: "🔮 마력의 원천", statType: "mpPercent", valPerLevel: 0.10, price: 450, learned: false, level: 0, desc: "상시 최대 MP 증가" },
-        { id: 23, category: "passive", name: "🎯 급소 노리기", statType: "critChance", valPerLevel: 0.02, price: 1000, learned: false, level: 0, desc: "상시 크리티컬 확률 증가" },
-        { id: 24, category: "passive", name: "💰 탐욕의 눈빛", statType: "goldBonus", valPerLevel: 0.05, price: 700, learned: false, level: 0, desc: "상시 골드 획득량 증가" }
+        // 추가된 유틸리티 스킬
+        { id: 25, category: "passive", name: "📖 지식 탐구", statType: "expBonus", valPerLevel: 0.10, price: 600, learned: false, level: 0, desc: "경험치 획득량 증가" },
+        { id: 26, category: "passive", name: "💎 룬 감지", statType: "shardChanceBonus", valPerLevel: 0.05, price: 800, learned: false, level: 0, desc: "룬 조각 드랍 확률 증가" },
+        { id: 27, category: "passive", name: "🏺 파편 수집가", statType: "shardAmountBonus", valPerLevel: 1.0, price: 1200, learned: false, level: 0, desc: "룬 조각 드랍 수량 증가" },
+        { id: 28, category: "passive", name: "🧊 차원의 감각", statType: "cubeChanceBonus", valPerLevel: 0.01, price: 2000, learned: false, level: 0, desc: "큐브 드랍 확률 증가" }
     ];
 
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
-        gold: 200, shards: 0, statPts: 0, hyperPts: 0, maxDmg: 0,
+        gold: 200, shards: 0, cubes: 0, statPts: 0, hyperPts: 0, maxDmg: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
-        hyperDmg: 0, hyperCrit: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0,
+        hyperDmg: 0, hyperCrit: 0, hyperCritDmg: 0, hyperGold: 0, hyperCube: 0, hyperShard: 0,
         baseHp: 100, baseMp: 50, baseAtk: 10,
-        weapon: { type: "weapon", name: "목검", atk: 5, rarity: "일반", color: "rarity-일반", effects: [], desc: "초보용 나무 칼" },
-        armor: { type: "armor", name: "천 옷", hp: 20, rarity: "일반", color: "rarity-일반", effects: [], desc: "가벼운 직물 옷" },
+        weapon: { type: "weapon", name: "목검", atk: 5, rarity: "일반", color: "rarity-일반", effects: [], desc: "초보용 칼" },
+        armor: { type: "armor", name: "천 옷", hp: 20, rarity: "일반", color: "rarity-일반", effects: [], desc: "가벼운 옷" },
+        subWeapon: { type: "subWeapon", name: "낡은 부적", atk: 2, rarity: "일반", color: "rarity-일반", effects: [], desc: "낡은 부적" },
         potions: 2, mpPotions: 2, hp: 120, mp: 50,
         equippedRunes: [], activeBuffs: [], inventory: {}
     };
 
-    let stage = 1;
-    let maxStage = 1;
-    let isAutoBattling = false;
-    let battleInterval = null;
-    let currentMonster = null;
-    let isPcMode = false;
-    let currentRankingCategory = "gold";
+    let stage = 1; let maxStage = 1; let isAutoBattling = false; let battleInterval = null; let currentMonster = null; let isPcMode = false; let currentRankingCategory = "gold";
+    let activeTooltipItem = null;
 
-    // ---------------- [온라인 랭킹 동기화 및 표시] ----------------
-    function switchRankingType(type) {
-        currentRankingCategory = type;
-        document.querySelectorAll('.ranking-sub-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`rk-sub-${type}`).classList.add('active');
-        fetchRankingData();
+    // --- localStorage 자동 저장 & 불러오기 ---
+    function saveGame() {
+        const saveData = { player, stage, maxStage, skillList };
+        localStorage.setItem("tochi_rpg_save", JSON.stringify(saveData));
     }
 
-    function syncAndFetchRanking() {
-        if (!db) {
-            alert("Firebase 데이터베이스 설정이 필요합니다. (코드 상단 firebaseConfig 참조)");
-            return;
-        }
-        
-        // 데이터 베이스 업로드
-        const userRef = db.ref("rankings/" + player.name);
-        userRef.set({
-            name: player.name,
-            gold: player.gold,
-            maxDmg: player.maxDmg || 0,
-            level: player.level,
-            updatedAt: Date.now()
-        }).then(() => {
-            log(`🏆 <span style="color:#2ecc71;">[랭킹]</span> 정보가 등록되었습니다.`);
-            fetchRankingData();
-        }).catch(err => alert("랭킹 등록 실패: " + err.message));
-    }
-
-    function fetchRankingData() {
-        const container = document.getElementById("ranking-container");
-        if (!db) {
-            container.innerHTML = `<div style="text-align:center; color:#e74c3c; padding:15px;">
-                Firebase 데이터베이스 연동 후 사용 가능합니다.
-            </div>`;
-            return;
-        }
-
-        container.innerHTML = `<div style="text-align:center; color:#777; padding:10px;">불러오는 중...</div>`;
-
-        db.ref("rankings").orderByChild(currentRankingCategory).limitToLast(10).once("value", snapshot => {
-            container.innerHTML = "";
-            let list = [];
-            snapshot.forEach(child => {
-                list.push(child.val());
-            });
-
-            // 내림차순 정렬
-            list.sort((a, b) => b[currentRankingCategory] - a[currentRankingCategory]);
-
-            if (list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#777; padding:10px;">등록된 데이터가 없습니다.</div>`;
-                return;
-            }
-
-            list.forEach((item, idx) => {
-                const div = document.createElement("div");
-                div.className = "ranking-item";
-                
-                let rankClass = idx === 0 ? "rank-1" : idx === 1 ? "rank-2" : idx === 2 ? "rank-3" : "";
-                let valFormatted = item[currentRankingCategory];
-                if (currentRankingCategory === 'gold') valFormatted = valFormatted.toLocaleString() + " G";
-                else if (currentRankingCategory === 'maxDmg') valFormatted = valFormatted.toLocaleString() + " 딜";
-                else if (currentRankingCategory === 'level') valFormatted = "Lv." + valFormatted;
-
-                div.innerHTML = `
-                    <div>
-                        <span class="rank-badge ${rankClass}">${idx + 1}</span>
-                        <strong>${item.name}</strong>
-                    </div>
-                    <div style="font-weight:bold; color:#f1c40f;">${valFormatted}</div>
-                `;
-                container.appendChild(div);
-            });
-        });
-    }
-
-    function toggleViewMode() {
-        isPcMode = !isPcMode;
-        const body = document.body;
-        const toggleBtn = document.querySelector('.mode-toggle-btn');
-        if (isPcMode) {
-            body.classList.remove('mobile-mode');
-            body.classList.add('pc-mode');
-            toggleBtn.innerText = "📱 모바일버전";
-        } else {
-            body.classList.remove('pc-mode');
-            body.classList.add('mobile-mode');
-            toggleBtn.innerText = "🖥️ PC버전";
-        }
-    }
-
-    window.switchTab = function(tabId, btn) {
-        if (isPcMode) return;
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        const targetTab = document.getElementById(tabId);
-        if (targetTab) targetTab.classList.add('active');
-        if (btn) btn.classList.add('active');
-
-        if (tabId === 'tab-ranking') fetchRankingData();
-    };
-
-    function changePlayerName() {
-        const newName = prompt("변경할 이름을 입력하세요:", player.name);
-        if (newName && newName.trim() !== "") {
-            player.name = newName.trim();
-            log(`✏️ 이름이 **[${player.name}]**(으)로 변경되었습니다.`);
-            updateUI();
+    function loadGame() {
+        const data = localStorage.getItem("tochi_rpg_save");
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                player = { ...player, ...parsed.player };
+                stage = parsed.stage || 1;
+                maxStage = parsed.maxStage || 1;
+                if (parsed.skillList) {
+                    parsed.skillList.forEach(s => {
+                        const target = skillList.find(x => x.id === s.id);
+                        if (target) { target.learned = s.learned; target.level = s.level; }
+                    });
+                }
+            } catch(e) {}
         }
     }
 
     function showTooltip(event, item) {
         if (!item) return;
         event.stopPropagation();
+        activeTooltipItem = item;
         const tooltip = document.getElementById("item-tooltip");
-        const title = document.getElementById("tt-title");
-        const rarity = document.getElementById("tt-rarity");
-        const stat = document.getElementById("tt-stat");
+        
+        document.getElementById("tt-title").innerText = item.name || "";
+        document.getElementById("tt-title").className = `tooltip-title ${item.color || ''}`;
+        document.getElementById("tt-rarity").innerText = `[${item.rarity || '일반'} 등급]`;
+        document.getElementById("tt-rarity").className = `tooltip-rarity ${item.color || ''}`;
+        document.getElementById("tt-stat").innerText = item.type === "weapon" ? `⚔️ 공격력 +${item.atk||0}` : item.type === "armor" ? `🛡️ 체력 +${item.hp||0}` : `🔮 공격력 +${item.atk||0}`;
+
         const effectsList = document.getElementById("tt-effects-list");
-        const desc = document.getElementById("tt-desc");
-
-        title.innerText = item.name || "";
-        title.className = `tooltip-title ${item.color || ''}`;
-        rarity.innerText = `[${item.rarity || '일반'} 등급]`;
-        rarity.className = `tooltip-rarity ${item.color || ''}`;
-
-        if (item.type === "weapon") stat.innerText = `⚔️ 공격력 +${item.atk || 0}`;
-        else stat.innerText = `🛡️ 체력 +${item.hp || 0}`;
-
         effectsList.innerHTML = "";
         if (item.effects && item.effects.length > 0) {
-            item.effects.forEach(eff => {
+            item.effects.forEach((eff, idx) => {
                 const div = document.createElement("div");
                 div.className = "tooltip-effect";
-                div.innerText = `⚡ ${eff.name}: ${getEffectDescText(eff)}`;
+                div.innerHTML = `
+                    <span>⚡ ${eff.name}: ${getEffectDescText(eff)}</span>
+                    <button onclick="useCubeOnOption(${idx})" style="padding:1px 5px; font-size:0.7rem; background:#009999; margin-left:4px;">🎲 큐브 변경</button>
+                `;
                 effectsList.appendChild(div);
             });
         }
-
-        desc.innerText = item.desc || "특별한 기운이 느껴집니다.";
+        document.getElementById("tt-desc").innerText = item.desc || "";
         tooltip.style.display = "block";
     }
 
-    function getEffectDescText(eff) {
-        let text = eff.desc;
-        text = text.replace("{chance}", eff.chance);
-        if (eff.val !== undefined) text = text.replace("{val}", eff.val);
-        return text;
+    function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; activeTooltipItem = null; }
+
+    function useCubeOnOption(optIdx) {
+        if (player.cubes <= 0) { alert("🧊 큐브가 부족합니다!"); return; }
+        if (!activeTooltipItem || !activeTooltipItem.effects[optIdx]) return;
+
+        player.cubes--;
+        const rarityIdx = itemData.rarities.findIndex(r => r.name === activeTooltipItem.rarity);
+        const randEff = specialEffectsPool[Math.floor(Math.random() * specialEffectsPool.length)];
+        const stats = randEff.tierStats[rarityIdx];
+
+        let chanceVal = getRandomInt(stats.minC, stats.maxC);
+        let newEff = { id: randEff.id, name: randEff.name, type: randEff.type, desc: randEff.desc, chance: chanceVal };
+        if (randEff.type === "lifesteal" || randEff.type === "mprecover") {
+            newEff.val = getRandomInt(stats.minV, stats.maxV);
+        }
+
+        activeTooltipItem.effects[optIdx] = newEff;
+        log(`🧊 큐브를 사용하여 **[${newEff.name}]** 옵션으로 재설정했습니다!`);
+        updateUI();
+        showTooltip(event, activeTooltipItem);
+        saveGame();
     }
 
-    function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; }
     function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function getEffectDescText(eff) { return eff.desc.replace("{chance}", eff.chance).replace("{val}", eff.val || ""); }
 
-    function getRuneBonus(statName) {
-        return player.equippedRunes.filter(r => r.stat === statName).reduce((sum, r) => sum + r.val, 0);
-    }
-
-    function getPassiveBonus(statType) {
-        return skillList.filter(s => s.category === "passive" && s.learned && s.statType === statType).reduce((sum, s) => sum + (s.valPerLevel * s.level), 0);
-    }
-
-    function getBuffBonus(type) {
-        return player.activeBuffs.reduce((sum, b) => sum + (b[type] || 0), 0);
-    }
+    function getRuneBonus(statName) { return player.equippedRunes.filter(r => r.stat === statName).reduce((sum, r) => sum + r.val, 0); }
+    function getPassiveBonus(statType) { return skillList.filter(s => s.category === "passive" && s.learned && s.statType === statType).reduce((sum, s) => sum + (s.valPerLevel * s.level), 0); }
+    function getBuffBonus(type) { return player.activeBuffs.reduce((sum, b) => sum + (b[type] || 0), 0); }
 
     function getTotalAtk() {
-        const base = player.baseAtk + (player.strStat * 4) + (player.dexStat * 2) + player.weapon.atk;
-        const passiveAtkBonus = getPassiveBonus("atkPercent");
-        const runeAtkBonus = getRuneBonus("atkPercent");
-        const buffAtkBonus = getBuffBonus("buffAtkPercent");
-        const hyperDmgBonus = player.hyperDmg * 0.02;
-        return Math.floor(base * (1 + passiveAtkBonus + runeAtkBonus + buffAtkBonus + hyperDmgBonus));
+        const base = player.baseAtk + (player.strStat * 4) + (player.dexStat * 2) + player.weapon.atk + (player.subWeapon ? player.subWeapon.atk || 0 : 0);
+        return Math.floor(base * (1 + getPassiveBonus("atkPercent") + getRuneBonus("atkPercent") + getBuffBonus("buffAtkPercent") + (player.hyperDmg * 0.02)));
     }
 
     function getTotalCritChance() {
-        const baseCrit = 5;
-        const dexBonus = player.dexStat * 0.2;
-        const lukBonus = player.lukStat * 0.5;
-        const runeBonus = getRuneBonus("critChance") * 100;
-        const buffBonus = getBuffBonus("buffCritPercent") * 100;
-        const hyperCritBonus = player.hyperCrit * 1.0;
-        const passiveCritBonus = getPassiveBonus("critChance") * 100;
-        return (baseCrit + dexBonus + lukBonus + runeBonus + buffBonus + hyperCritBonus + passiveCritBonus).toFixed(1);
+        return (5 + (player.dexStat * 0.2) + (player.lukStat * 0.5) + (getRuneBonus("critChance") * 100) + (getBuffBonus("buffCritPercent") * 100) + player.hyperCrit + (getPassiveBonus("critChance") * 100)).toFixed(1);
     }
 
     function getTotalMaxHp() {
-        const base = player.baseHp + player.armor.hp;
-        const passiveHpBonus = getPassiveBonus("hpPercent");
-        const runeHpBonus = getRuneBonus("hpPercent");
-        const buffHpBonus = getBuffBonus("buffHpPercent");
-        return Math.floor(base * (1 + passiveHpBonus + runeHpBonus + buffHpBonus));
+        return Math.floor((player.baseHp + player.armor.hp) * (1 + getPassiveBonus("hpPercent") + getRuneBonus("hpPercent") + getBuffBonus("buffHpPercent")));
     }
 
     function getTotalMaxMp() {
-        const base = player.baseMp + (player.intStat * 15);
-        const passiveMpBonus = getPassiveBonus("mpPercent");
-        return Math.floor(base * (1 + getRuneBonus("mpPercent") + passiveMpBonus));
+        return Math.floor((player.baseMp + (player.intStat * 15)) * (1 + getRuneBonus("mpPercent") + getPassiveBonus("mpPercent")));
     }
 
     function log(msg) {
         const logBox = document.getElementById("log-box");
         if (!logBox) return;
-        const div = document.createElement("div");
-        div.className = "log-line";
-        div.innerHTML = msg;
+        const div = document.createElement("div"); div.className = "log-line"; div.innerHTML = msg;
         logBox.appendChild(div);
         if (logBox.children.length > 100) logBox.removeChild(logBox.firstChild);
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    function renderLootInventory() {
-        const container = document.getElementById("loot-container");
-        container.innerHTML = "";
-        const lootKeys = Object.keys(player.inventory);
-        if (lootKeys.length === 0) {
-            container.innerHTML = "<small style='color:#777;'>수집된 전리품이 없습니다.</small>";
-            return;
-        }
-        lootKeys.forEach(key => {
-            const item = player.inventory[key];
-            if (item && item.count > 0) {
-                const div = document.createElement("div");
-                div.className = "loot-item";
-                div.innerHTML = `📦 <strong>${key}</strong> x${item.count} <span style="color:#f1c40f;">(${item.val * item.count}G)</span>`;
-                container.appendChild(div);
-            }
-        });
-    }
-
-    function sellAllLoot() {
-        let totalGold = 0;
-        Object.keys(player.inventory).forEach(key => {
-            const item = player.inventory[key];
-            if (item) totalGold += item.val * item.count;
-        });
-        if (totalGold === 0) { alert("매각할 전리품이 없습니다!"); return; }
-        player.gold += totalGold;
-        player.inventory = {};
-        log(`💰 전리품을 모두 매각하여 **+${totalGold}G** 획득!`);
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById("p-name").innerText = player.name;
-        document.getElementById("p-level").innerText = player.level;
-        document.getElementById("p-gold").innerText = player.gold;
-        document.getElementById("p-shards").innerText = player.shards;
-        document.getElementById("p-stat-pts").innerText = player.statPts;
-        document.getElementById("p-hyper-pts").innerText = player.hyperPts;
-        document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
-        
-        document.getElementById("stat-str").innerText = player.strStat;
-        document.getElementById("stat-dex").innerText = player.dexStat;
-        document.getElementById("stat-int").innerText = player.intStat;
-        document.getElementById("stat-luk").innerText = player.lukStat;
-
-        document.getElementById("hstat-dmg").innerText = player.hyperDmg * 2;
-        document.getElementById("hstat-crit").innerText = player.hyperCrit * 1;
-        document.getElementById("hstat-critdmg").innerText = player.hyperCritDmg * 3;
-        document.getElementById("hstat-gold").innerText = player.hyperGold * 3;
-        document.getElementById("hstat-boss").innerText = player.hyperBoss * 4;
-
-        document.getElementById("p-atk").innerText = getTotalAtk();
-        document.getElementById("p-crit").innerText = getTotalCritChance();
-        document.getElementById("p-max-hp").innerText = getTotalMaxHp();
-        document.getElementById("p-max-mp").innerText = getTotalMaxMp();
-        
-        const buffContainer = document.getElementById("active-buffs-list");
-        buffContainer.innerHTML = "";
-        player.activeBuffs.forEach(b => {
-            const span = document.createElement("span");
-            span.className = "buff-badge";
-            span.innerText = `${b.name} (${b.duration}턴)`;
-            buffContainer.appendChild(span);
-        });
-
-        const w = document.getElementById("p-weapon");
-        const wCount = player.weapon.effects ? player.weapon.effects.length : 0;
-        w.innerText = `${player.weapon.name} (+${player.weapon.atk})${wCount > 0 ? ' [옵션 '+wCount+'개]' : ''}`;
-        w.className = `${player.weapon.color} item-hover`;
-
-        const a = document.getElementById("p-armor");
-        const aCount = player.armor.effects ? player.armor.effects.length : 0;
-        a.innerText = `${player.armor.name} (+${player.armor.hp})${aCount > 0 ? ' [옵션 '+aCount+'개]' : ''}`;
-        a.className = `${player.armor.color} item-hover`;
-
-        document.getElementById("shop-w-info").innerText = `${player.weapon.name} (공격력 +${player.weapon.atk})`;
-        document.getElementById("shop-a-info").innerText = `${player.armor.name} (체력 +${player.armor.hp})`;
-
-        document.getElementById("p-potions").innerText = player.potions;
-        document.getElementById("p-mp-potions").innerText = player.mpPotions;
-        
-        document.getElementById("current-stage-display").innerText = "STAGE " + stage;
-        document.getElementById("max-stage-display").innerText = maxStage;
-
-        const drawCost = 80 + (stage * 20);
-        document.getElementById("cost-weapon").innerText = drawCost;
-        document.getElementById("cost-armor").innerText = drawCost;
-
-        document.getElementById("hp-bar").style.width = Math.max(0, Math.min(100, (player.hp / getTotalMaxHp()) * 100)) + "%";
-        document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
-        document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
-
-        renderSkillShop();
-        renderSkillUpgrades();
-        renderRunes();
-        renderLootInventory();
-    }
-
-    function renderRunes() {
-        const container = document.getElementById("equipped-runes-list");
-        container.innerHTML = "";
-        if (player.equippedRunes.length === 0) {
-            container.innerHTML = "<small style='color:#777;'>장착된 룬이 없습니다. (0/3)</small>";
-            return;
-        }
-        player.equippedRunes.forEach((rune, idx) => {
-            const div = document.createElement("div");
-            div.className = "rune-badge";
-            const valDisp = Math.round(rune.val * 100);
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="${rune.color}">🔷 [${rune.rarity}] ${rune.name}</span>
-                    <button onclick="unequipRune(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#c0392b; min-height:28px;">해제</button>
-                </div>
-                <small style="color:#ccc;">${rune.desc}${valDisp}${rune.unit}</small>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function buyRune() {
-        if (player.shards < 50) { alert("💎 룬 파편이 부족합니다!"); return; }
-        if (player.equippedRunes.length >= 3) { alert("룬은 최대 3개까지 장착 가능합니다."); return; }
-        player.shards -= 50;
-
-        const rand = Math.random();
-        let cum = 0;
-        let rarityIdx = 0;
-        for (let i = 0; i < itemData.rarities.length; i++) {
-            cum += itemData.rarities[i].chance;
-            if (rand <= cum) { rarityIdx = i; break; }
-        }
-        const selectedRarity = itemData.rarities[rarityIdx];
-        const baseRune = runeTypes[Math.floor(Math.random() * runeTypes.length)];
-        const finalVal = baseRune.baseVal * selectedRarity.mult;
-
-        const runeObj = {
-            name: `${baseRune.name}의 룬`,
-            rarity: selectedRarity.name,
-            color: selectedRarity.color,
-            stat: baseRune.stat,
-            val: finalVal,
-            unit: baseRune.unit,
-            desc: baseRune.desc
-        };
-
-        player.equippedRunes.push(runeObj);
-        log(`🔮 <span class="${runeObj.color}">[룬 획득]</span> **[${runeObj.rarity}] ${runeObj.name}** 장착!`);
-        updateUI();
-    }
-
-    function unequipRune(idx) {
-        const removed = player.equippedRunes.splice(idx, 1)[0];
-        log(`🗑️ 룬 [${removed.name}] 해제.`);
-        updateUI();
-    }
-
-    function renderSkillShop() {
-        const container = document.getElementById("skill-shop-list");
-        container.innerHTML = "";
-        skillList.forEach(sk => {
-            const div = document.createElement("div");
-            div.className = "shop-item";
-            const btnText = sk.learned ? "습득완료" : `${sk.price}G`;
-            let tagHtml = sk.category === "active" ? `<span class="skill-type-tag tag-active">공격</span>` :
-                          sk.category === "buff" ? `<span class="skill-type-tag tag-buff">버프</span>` :
-                          `<span class="skill-type-tag tag-passive">패시브</span>`;
-
-            div.innerHTML = `
-                <div>
-                    ${tagHtml}<strong>${sk.name}</strong> <small style="color:#aaa;">${sk.costMp ? '(MP ' + sk.costMp + ')' : ''}</small><br>
-                    <small style="color:#888;">${sk.desc}</small>
-                </div>
-                <button onclick="buySkill(${sk.id})" ${sk.learned ? "disabled" : ""} style="min-height:30px; padding:2px 8px;">${btnText}</button>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function renderSkillUpgrades() {
-        const container = document.getElementById("skill-upgrade-list");
-        container.innerHTML = "";
-        const learnedList = skillList.filter(s => s.learned);
-        if (learnedList.length === 0) {
-            container.innerHTML = "<small style='color:#777;'>습득한 스킬이 없습니다.</small>";
-            return;
-        }
-        learnedList.forEach(sk => {
-            const div = document.createElement("div");
-            div.className = "shop-item";
-            const upgradeCost = (sk.level) * 30 + 30;
-            let infoText = sk.category === "active" ? `계수: ${(sk.mult + (sk.level * 0.4)).toFixed(1)}배` :
-                           sk.category === "buff" ? `버프 효과: +${Math.round(((sk.buffAtkPercent || sk.buffHpPercent || sk.buffCritPercent) + (sk.level - 1) * 0.05) * 100)}%` :
-                           `효과: +${Math.round((sk.valPerLevel * sk.level) * 100)}%`;
-
-            div.innerHTML = `
-                <div>
-                    <strong>${sk.name} (+${sk.level})</strong><br>
-                    <small style="color:#f39c12;">${infoText}</small>
-                </div>
-                <button onclick="upgradeSkill(${sk.id})" style="background:#8e44ad; min-height:30px; padding:2px 8px;">강화 (💎 ${upgradeCost})</button>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function upgradeSkill(id) {
-        const sk = skillList.find(s => s.id === id);
-        if (!sk) return;
-        const upgradeCost = (sk.level) * 30 + 30;
-        if (player.shards < upgradeCost) { alert("💎 룬 파편이 부족합니다!"); return; }
-        player.shards -= upgradeCost;
-        sk.level++;
-        log(`✨ <span style="color:#f1c40f;">[스킬 강화]</span> **${sk.name}** +${sk.level} 달성!`);
-        updateUI();
-    }
-
     function generateRandomItem(type) {
         const rand = Math.random();
-        let cum = 0;
-        let selectedRarityIdx = 0;
+        let cum = 0; let selectedRarityIdx = 0;
         for (let i = 0; i < itemData.rarities.length; i++) {
             cum += itemData.rarities[i].chance;
             if (rand <= cum) { selectedRarityIdx = i; break; }
@@ -1018,325 +512,257 @@
         const suf = itemData.suffixes[Math.floor(Math.random() * itemData.suffixes.length)];
         
         const activeEffects = [];
-        const effectCount = selectedRarity.effectCount;
-        
-        if (effectCount > 0) {
-            const shuffled = [...specialEffectsPool].sort(() => 0.5 - Math.random());
-            for (let i = 0; i < Math.min(effectCount, shuffled.length); i++) {
-                const baseEff = shuffled[i];
-                const stats = baseEff.tierStats[selectedRarityIdx];
-
-                let chanceVal = getRandomInt(stats.minC, stats.maxC);
-                let effObj = { 
-                    id: baseEff.id, 
-                    name: baseEff.name, 
-                    type: baseEff.type, 
-                    desc: baseEff.desc,
-                    chance: chanceVal
-                };
-
-                if (baseEff.type === "lifesteal" || baseEff.type === "mprecover") {
-                    effObj.val = getRandomInt(stats.minV, stats.maxV);
-                }
-
-                activeEffects.push(effObj);
-            }
+        for (let i = 0; i < selectedRarity.effectCount; i++) {
+            const baseEff = specialEffectsPool[Math.floor(Math.random() * specialEffectsPool.length)];
+            const stats = baseEff.tierStats[selectedRarityIdx];
+            let effObj = { id: baseEff.id, name: baseEff.name, type: baseEff.type, desc: baseEff.desc, chance: getRandomInt(stats.minC, stats.maxC) };
+            if (baseEff.type === "lifesteal" || baseEff.type === "mprecover") effObj.val = getRandomInt(stats.minV, stats.maxV);
+            activeEffects.push(effObj);
         }
 
-        if (type === 'weapon') {
-            const base = itemData.weaponBases[Math.floor(Math.random() * itemData.weaponBases.length)];
-            const fullName = `[${selectedRarity.name}] ${pre} ${base} of ${suf}`;
-            const baseVal = 5 + (stage * 8);
-            const finalAtk = Math.floor(baseVal * selectedRarity.mult * (0.8 + Math.random() * 0.4));
-            return { type: "weapon", name: fullName, atk: finalAtk, rarity: selectedRarity.name, color: selectedRarity.color, effects: activeEffects, desc: `${selectedRarity.name} 등급 무기` };
-        } else {
-            const base = itemData.armorBases[Math.floor(Math.random() * itemData.armorBases.length)];
-            const fullName = `[${selectedRarity.name}] ${pre} ${base} of ${suf}`;
-            const baseVal = 15 + (stage * 20);
-            const finalHp = Math.floor(baseVal * selectedRarity.mult * (0.8 + Math.random() * 0.4));
-            return { type: "armor", name: fullName, hp: finalHp, rarity: selectedRarity.name, color: selectedRarity.color, effects: activeEffects, desc: `${selectedRarity.name} 등급 방어구` };
-        }
+        let baseName = type === 'weapon' ? itemData.weaponBases : type === 'armor' ? itemData.armorBases : itemData.subWeaponBases;
+        const base = baseName[Math.floor(Math.random() * baseName.length)];
+        const fullName = `[${selectedRarity.name}] ${pre} ${base} of ${suf}`;
+        const baseVal = 5 + (stage * 8);
+        const finalStat = Math.floor(baseVal * selectedRarity.mult * (0.8 + Math.random() * 0.4));
+
+        return { type, name: fullName, [type === 'armor' ? 'hp' : 'atk']: finalStat, rarity: selectedRarity.name, color: selectedRarity.color, effects: activeEffects, desc: `${selectedRarity.name} 등급` };
     }
 
     function buyRandomItem(type) {
         const cost = 80 + (stage * 20);
         if (player.gold < cost) { alert("골드가 부족합니다!"); return; }
         player.gold -= cost;
-
         const newItem = generateRandomItem(type);
-        if (type === 'weapon') {
-            player.weapon = newItem;
-            log(`🎁 상점 뽑기: <span class="${newItem.color}">${newItem.name}</span> (공격력 +${newItem.atk}) 획득!`);
-        } else {
-            player.armor = newItem;
-            player.hp += newItem.hp;
-            log(`🎁 상점 뽑기: <span class="${newItem.color}">${newItem.name}</span> (체력 +${newItem.hp}) 획득!`);
-        }
+        player[type] = newItem;
+        log(`🎁 상점 뽑기: <span class="${newItem.color}">${newItem.name}</span> 획득!`);
         updateUI();
-    }
-
-    function spawnMonster() {
-        const prefix = monsterPrefixes[Math.floor(Math.random() * monsterPrefixes.length)];
-        const isBossStage = stage % 5 === 0;
-        const base = randomMonsterPool[Math.floor(Math.random() * randomMonsterPool.length)];
-        let fullName = isBossStage ? `🔥 [스테이지 보스] ${bossTitles[Math.floor(Math.random() * bossTitles.length)]} ${base.name}` : `${prefix.name} ${base.name}`;
-        let hpMult = prefix.hpMult * (isBossStage ? 2.5 : 1.0);
-        let atkMult = prefix.atkMult * (isBossStage ? 1.8 : 1.0);
-        let isElite = prefix.isElite || isBossStage;
-
-        return {
-            name: fullName,
-            hp: Math.floor((35 + (stage * 22)) * hpMult),
-            maxHp: Math.floor((35 + (stage * 22)) * hpMult),
-            atk: Math.floor((7 + (stage * 5)) * atkMult),
-            expReward: Math.floor((30 + (stage * 12)) * (isElite ? 1.8 : 1.0)),
-            goldReward: Math.floor((25 + (stage * 18)) * (isElite ? 2.0 : 1.0)),
-            isElite: isElite,
-            lootName: `${base.name}의 파편`, lootVal: Math.floor(base.val * (isElite ? 2.0 : 1.0)), isBoss: isBossStage
-        };
+        saveGame();
     }
 
     function battleTurn() {
         if (!currentMonster || currentMonster.hp <= 0) {
-            currentMonster = spawnMonster();
-            log(`----------------------------------------`);
-            log(`📍 [${currentMonster.name}] 등장! (HP: ${currentMonster.hp})`);
+            const isBossStage = stage % 5 === 0;
+            currentMonster = { name: (isBossStage ? "🔥 [보스] " : "") + "몬스터", hp: 35 + (stage * 22), maxHp: 35 + (stage * 22), atk: 7 + (stage * 5), isBoss: isBossStage };
+            log(`----------------------------------------\n📍 [${currentMonster.name}] 등장!`);
             return;
         }
 
-        player.activeBuffs.forEach(b => b.duration--);
-        player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
-
-        player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
-
-        let skillBonusDmg = 1.0;
-        const learnedActives = skillList.filter(s => s.category === "active" && s.learned);
-        if (learnedActives.length > 0 && player.mp >= 20) {
-            const randSkill = learnedActives[Math.floor(Math.random() * learnedActives.length)];
-            if (player.mp >= randSkill.costMp) {
-                player.mp -= randSkill.costMp;
-                const skMult = randSkill.mult + (randSkill.level * 0.4);
-                skillBonusDmg = skMult;
-                log(`✨ <span style="color:#f1c40f;"><strong>[스킬]</strong> ${randSkill.name}!</span> (데미지 ${skMult.toFixed(1)}배)`);
-            }
-        }
-
-        const learnedBuffs = skillList.filter(s => s.category === "buff" && s.learned);
-        learnedBuffs.forEach(bSkill => {
-            const exists = player.activeBuffs.some(b => b.id === bSkill.id);
-            if (!exists && player.mp >= bSkill.costMp) {
-                player.mp -= bSkill.costMp;
-                const valInc = (bSkill.level - 1) * 0.05;
-                let buffObj = { id: bSkill.id, name: bSkill.name, duration: bSkill.duration };
-                if (bSkill.buffAtkPercent) buffObj.buffAtkPercent = bSkill.buffAtkPercent + valInc;
-                if (bSkill.buffHpPercent) buffObj.buffHpPercent = bSkill.buffHpPercent + valInc;
-                if (bSkill.buffCritPercent) buffObj.buffCritPercent = bSkill.buffCritPercent + valInc;
-
-                player.activeBuffs.push(buffObj);
-                log(`🛡️ <span style="color:#2ecc71;">[버프]</span> **${bSkill.name}** 적용!`);
-            }
-        });
-
-        let baseDmg = Math.floor(getTotalAtk() * skillBonusDmg * (0.9 + Math.random() * 0.2));
-        if (currentMonster.isBoss && player.hyperBoss > 0) {
-            baseDmg = Math.floor(baseDmg * (1 + (player.hyperBoss * 0.04)));
-        }
-
+        let baseDmg = Math.floor(getTotalAtk() * (0.9 + Math.random() * 0.2));
         let isCrit = Math.random() < (parseFloat(getTotalCritChance()) / 100);
-        if (isCrit) {
-            const hyperCritDmgBonus = 1.8 + (player.hyperCritDmg * 0.03);
-            baseDmg = Math.floor(baseDmg * hyperCritDmgBonus);
-        }
+        if (isCrit) baseDmg = Math.floor(baseDmg * 1.8);
 
-        const intDmgBonus = player.intStat * 0.01;
-        let damage = Math.floor(baseDmg * (1 + intDmgBonus));
-
-        // 옵션 발동 체크
-        let isInstantKill = false;
-        let isDoubleAttack = false;
-        const allEffects = [...(player.weapon.effects || []), ...(player.armor.effects || [])];
-
+        // 아이템 보조 옵션 종합 적용
+        const allEffects = [...(player.weapon.effects||[]), ...(player.armor.effects||[]), ...(player.subWeapon.effects||[])];
         allEffects.forEach(eff => {
             if (Math.random() * 100 < eff.chance) {
-                if (eff.id === "INSTANT_KILL") isInstantKill = true;
-                else if (eff.id === "DOUBLE_ATTACK") isDoubleAttack = true;
-                else if (eff.id === "LIFE_STEAL") {
-                    const healAmt = Math.floor(damage * (eff.val / 100));
-                    player.hp = Math.min(getTotalMaxHp(), player.hp + healAmt);
-                    log(`🩸 <span style="color:#e74c3c;">[흡혈]</span> HP +${healAmt} 회복!`);
-                } else if (eff.id === "MP_RECOVER") {
-                    player.mp = Math.min(getTotalMaxMp(), player.mp + eff.val);
-                    log(`🔮 <span style="color:#3498db;">[마나 샘]</span> MP +${eff.val} 회복!`);
-                }
+                if (eff.id === "LIFE_STEAL") player.hp = Math.min(getTotalMaxHp(), player.hp + Math.floor(baseDmg * (eff.val/100)));
+                if (eff.id === "MP_RECOVER") player.mp = Math.min(getTotalMaxMp(), player.mp + eff.val);
             }
         });
 
-        if (isInstantKill) {
-            damage = currentMonster.hp;
-            log(`💀 <span style="color:#e74c3c;"><strong>[즉사!]</strong></span> ${currentMonster.name}을 즉사시켰습니다!`);
-        } else if (isDoubleAttack) {
-            damage *= 2;
-            log(`⚡ <span style="color:#f1c40f;"><strong>[더블 어택!]</strong></span> ${currentMonster.name}에게 2배 피해 (${damage})!`);
-        } else {
-            if (isCrit) log(`💥 <span style="color:#e67e22;"><strong>[치명타!]</strong></span> ${currentMonster.name}에게 ${damage} 피해!`);
-            else log(`⚔️ ${currentMonster.name}에게 ${damage} 피해.`);
-        }
-
-        // 최고 데미지 갱신
-        if (damage > (player.maxDmg || 0)) {
-            player.maxDmg = damage;
-        }
-
-        currentMonster.hp -= damage;
+        if (baseDmg > (player.maxDmg || 0)) player.maxDmg = baseDmg;
+        currentMonster.hp -= baseDmg;
+        log(`⚔️ 몬스터에게 ${baseDmg} 피해.`);
 
         if (currentMonster.hp <= 0) {
-            log(`🟢 <strong>${currentMonster.name}</strong> 처치!`);
-            const lukGoldBonus = 1 + (player.lukStat * 0.005);
-            const hyperGoldBonus = 1 + (player.hyperGold * 0.03);
-            const earnedGold = Math.floor(currentMonster.goldReward * (1 + getRuneBonus("goldBonus")) * lukGoldBonus * hyperGoldBonus);
-            
+            log(`🟢 처치 완료!`);
+            const earnedGold = Math.floor((25 + stage * 18) * (1 + (player.lukStat * 0.005) + (player.hyperGold * 0.03)));
             player.gold += earnedGold;
-            log(`💰 +${earnedGold}G 획득!`);
 
-            let dropChance = 0.08;
-            if (currentMonster.isBoss) dropChance = 0.50;
-            else if (currentMonster.isElite) dropChance = 0.30;
-
-            if (Math.random() < dropChance) {
-                const shardAmount = currentMonster.isBoss ? Math.floor(3 + Math.random() * 3) : 1;
-                player.shards += shardAmount;
-                log(`💎 <span style="color:#00ffff;"><strong>[드롭!]</strong></span> 룬 파편 +${shardAmount}개!`);
+            // 극소량 큐브 드랍 판정 (기본 0.5% + 스킬 + 하이퍼스탯)
+            const cubeDropChance = 0.005 + getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01);
+            if (Math.random() < cubeDropChance) {
+                player.cubes++;
+                log(`🧊 <span style="color:#00ffff;"><strong>[희귀 드랍]</strong></span> 큐브 1개 획득!`);
             }
 
-            const lootName = currentMonster.lootName;
-            player.inventory[lootName] = player.inventory[lootName] ? 
-                { count: player.inventory[lootName].count + 1, val: currentMonster.lootVal } : 
-                { count: 1, val: currentMonster.lootVal };
-
-            gainExp(currentMonster.expReward);
-
-            if (stage === maxStage) {
-                stage++; maxStage++;
+            // 룬 파편 드랍 판정
+            const shardChance = 0.08 + getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02);
+            if (Math.random() < shardChance) {
+                const shardQty = 1 + Math.floor(getPassiveBonus("shardAmountBonus"));
+                player.shards += shardQty;
+                log(`💎 룬 파편 +${shardQty}개 획득!`);
             }
-            currentMonster = null;
-            updateUI();
-            return;
-        }
 
-        let mDamage = Math.max(1, Math.floor(currentMonster.atk * (0.8 + Math.random() * 0.4)));
-        player.hp -= mDamage;
-        log(`💥 ${currentMonster.name}의 공격! ${mDamage} 피해! (남은 HP: ${Math.max(0, player.hp)})`);
-
-        if (player.hp <= 0) {
-            log(`💀 쓰러졌습니다... HP/MP 회복 후 재도전합니다.`);
-            player.hp = getTotalMaxHp();
-            player.mp = getTotalMaxMp();
+            gainExp(Math.floor((30 + stage * 12) * (1 + getPassiveBonus("expBonus"))));
+            if (stage === maxStage) { stage++; maxStage++; }
             currentMonster = null;
+        } else {
+            player.hp -= Math.max(1, currentMonster.atk);
+            if (player.hp <= 0) { player.hp = getTotalMaxHp(); currentMonster = null; }
         }
 
         updateUI();
+        saveGame();
+    }
+
+    function gainExp(amount) {
+        player.exp += amount;
+        if (player.exp >= player.maxExp) {
+            player.level++; player.exp -= player.maxExp; player.maxExp = Math.floor(player.maxExp * 1.5);
+            player.statPts += 5;
+            if (player.level % 10 === 0) player.hyperPts++;
+            log(`🎉 <span style="color:#f1c40f;"><strong>LEVEL UP! Lv.${player.level}</strong></span>`);
+        }
+    }
+
+    function updateUI() {
+        document.getElementById("p-name").innerText = player.name;
+        document.getElementById("p-level").innerText = player.level;
+        document.getElementById("p-gold").innerText = player.gold.toLocaleString();
+        document.getElementById("p-shards").innerText = player.shards;
+        document.getElementById("p-cubes").innerText = player.cubes;
+        document.getElementById("p-stat-pts").innerText = player.statPts;
+        document.getElementById("p-hyper-pts").innerText = player.hyperPts;
+        document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
+
+        document.getElementById("p-atk").innerText = getTotalAtk();
+        document.getElementById("p-crit").innerText = getTotalCritChance();
+        document.getElementById("p-max-hp").innerText = getTotalMaxHp();
+        document.getElementById("p-max-mp").innerText = getTotalMaxMp();
+
+        // 1. 착용 장비 등급별 색상 표시 적용
+        const w = document.getElementById("p-weapon");
+        w.innerText = `${player.weapon.name} (+${player.weapon.atk})`;
+        w.className = `item-hover ${player.weapon.color}`;
+
+        const a = document.getElementById("p-armor");
+        a.innerText = `${player.armor.name} (+${player.armor.hp})`;
+        a.className = `item-hover ${player.armor.color}`;
+
+        const sub = document.getElementById("p-subweapon");
+        sub.innerText = `${player.subWeapon.name} (+${player.subWeapon.atk})`;
+        sub.className = `item-hover ${player.subWeapon.color}`;
+
+        const shopW = document.getElementById("shop-w-info");
+        shopW.innerText = `${player.weapon.name} (공+${player.weapon.atk})`;
+        shopW.className = `item-hover ${player.weapon.color}`;
+
+        const shopA = document.getElementById("shop-a-info");
+        shopA.innerText = `${player.armor.name} (HP+${player.armor.hp})`;
+        shopA.className = `item-hover ${player.armor.color}`;
+
+        const shopSub = document.getElementById("shop-sub-info");
+        shopSub.innerText = `${player.subWeapon.name} (공+${player.subWeapon.atk})`;
+        shopSub.className = `item-hover ${player.subWeapon.color}`;
+
+        document.getElementById("stat-str").innerText = player.strStat;
+        document.getElementById("stat-dex").innerText = player.dexStat;
+        document.getElementById("stat-int").innerText = player.intStat;
+        document.getElementById("stat-luk").innerText = player.lukStat;
+
+        document.getElementById("hstat-dmg").innerText = player.hyperDmg * 2;
+        document.getElementById("hstat-crit").innerText = player.hyperCrit * 1;
+        document.getElementById("hstat-critdmg").innerText = player.hyperCritDmg * 3;
+        document.getElementById("hstat-gold").innerText = player.hyperGold * 3;
+        document.getElementById("hstat-cube").innerText = player.hyperCube * 1;
+        document.getElementById("hstat-shard").innerText = player.hyperShard * 2;
+
+        document.getElementById("hp-bar").style.width = Math.max(0, Math.min(100, (player.hp / getTotalMaxHp()) * 100)) + "%";
+        document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
+        document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
+
+        renderSkillShop();
+        renderSkillUpgrades();
+    }
+
+    function renderSkillShop() {
+        const container = document.getElementById("skill-shop-list");
+        container.innerHTML = "";
+        skillList.forEach(sk => {
+            const div = document.createElement("div");
+            div.className = "shop-item";
+            div.innerHTML = `
+                <div>
+                    <span class="skill-type-tag tag-${sk.category}">${sk.category}</span><strong>${sk.name}</strong><br>
+                    <small style="color:#888;">${sk.desc}</small>
+                </div>
+                <button onclick="buySkill(${sk.id})" ${sk.learned ? "disabled" : ""}>${sk.learned ? "습득완료" : sk.price + 'G'}</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderSkillUpgrades() {
+        const container = document.getElementById("skill-upgrade-list");
+        container.innerHTML = "";
+        skillList.filter(s => s.learned).forEach(sk => {
+            const div = document.createElement("div"); div.className = "shop-item";
+            div.innerHTML = `
+                <div><strong>${sk.name} (+${sk.level})</strong></div>
+                <button onclick="upgradeSkill(${sk.id})">강화 (💎 ${(sk.level)*30+30})</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function buySkill(id) {
+        const sk = skillList.find(s => s.id === id);
+        if (!sk || player.gold < sk.price) return;
+        player.gold -= sk.price; sk.learned = true; sk.level = 1;
+        updateUI(); saveGame();
+    }
+
+    function upgradeSkill(id) {
+        const sk = skillList.find(s => s.id === id);
+        const cost = (sk.level)*30+30;
+        if (player.shards < cost) return;
+        player.shards -= cost; sk.level++;
+        updateUI(); saveGame();
     }
 
     function toggleAutoBattle() {
         isAutoBattling = !isAutoBattling;
         const btn = document.getElementById("toggle-btn");
         if (isAutoBattling) {
-            btn.innerText = "⏸️ 전투 일시정지";
-            btn.style.background = "#e74c3c";
+            btn.innerText = "⏸️ 전투 일시정지"; btn.style.background = "#e74c3c";
             battleInterval = setInterval(battleTurn, 800);
         } else {
-            btn.innerText = "⚔️ 자동 전투 시작";
-            btn.style.background = "#2ecc71";
+            btn.innerText = "⚔️ 자동 전투 시작"; btn.style.background = "#2ecc71";
             clearInterval(battleInterval);
         }
     }
 
-    function changeStage(delta) {
-        const targetStage = stage + delta;
-        if (targetStage >= 1 && targetStage <= maxStage) {
-            stage = targetStage;
-            currentMonster = null;
-            updateUI();
-        }
+    function switchTab(tabId, btn) {
+        if (isPcMode) return;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
     }
 
-    function gainExp(amount) {
-        player.exp += amount;
-        if (player.exp >= player.maxExp) {
-            player.level++;
-            player.exp -= player.maxExp;
-            player.maxExp = Math.floor(player.maxExp * 1.5);
-            player.statPts += 5;
-            
-            let hyperMsg = "";
-            if (player.level % 10 === 0) {
-                player.hyperPts += 1;
-                hyperMsg = " <span style='color:#9b59b6;'>(⚡ HYPER Pt +1)</span>";
-            }
-
-            player.hp = getTotalMaxHp();
-            player.mp = getTotalMaxMp();
-            log(`🎉🎉 <span style="color:#f1c40f;"><strong>LEVEL UP! Lv.${player.level}</strong></span> (AP +5)${hyperMsg} 🎉🎉`);
-        }
+    function toggleViewMode() {
+        isPcMode = !isPcMode;
+        document.body.className = isPcMode ? 'pc-mode' : 'mobile-mode';
     }
 
     function addStat(type) {
         if (player.statPts <= 0) return;
-        player.statPts--;
-        if (type === 'str') player.strStat++;
-        if (type === 'dex') player.dexStat++;
-        if (type === 'int') { player.intStat++; player.mp += 15; }
-        if (type === 'luk') player.lukStat++;
-        updateUI();
+        player.statPts--; player[type + 'Stat']++;
+        updateUI(); saveGame();
     }
 
     function addHyperStat(type) {
         if (player.hyperPts <= 0) return;
-        player.hyperPts--;
-        if (type === 'dmg') player.hyperDmg++;
-        if (type === 'crit') player.hyperCrit++;
-        if (type === 'critDmg') player.hyperCritDmg++;
-        if (type === 'gold') player.hyperGold++;
-        if (type === 'boss') player.hyperBoss++;
-        updateUI();
+        player.hyperPts--; player['hyper' + type.charAt(0).toUpperCase() + type.slice(1)]++;
+        updateUI(); saveGame();
     }
 
-    function buyPotionBulk(type, count) {
-        const totalCost = 30 * count;
-        if (player.gold < totalCost) { alert(`골드가 부족합니다! (${count}개 = ${totalCost}G)`); return; }
-        player.gold -= totalCost;
-        if (type === 'hp') player.potions += count;
-        if (type === 'mp') player.mpPotions += count;
-        log(`🧪 ${type.toUpperCase()} 포션 **${count}개** 구매 완료! (-${totalCost}G)`);
-        updateUI();
+    function changePlayerName() {
+        const newName = prompt("변경할 이름:", player.name);
+        if (newName) { player.name = newName.trim(); updateUI(); saveGame(); }
     }
 
-    function usePotion(type) {
-        if (type === 'hp') {
-            if (player.potions <= 0) return;
-            player.potions--;
-            player.hp = Math.min(getTotalMaxHp(), player.hp + 120);
-            log(`🚨 <span style="color:#2ecc71;">[HP 포션]</span> HP 120 회복!`);
-        } else if (type === 'mp') {
-            if (player.mpPotions <= 0) return;
-            player.mpPotions--;
-            player.mp = Math.min(getTotalMaxMp(), player.mp + 80);
-            log(`🧪 <span style="color:#3498db;">[MP 포션]</span> MP 80 회복!`);
-        }
-        updateUI();
-    }
+    function sellAllLoot() {}
+    function buyRune() {}
+    function changeStage(delta) { stage = Math.max(1, Math.min(maxStage, stage + delta)); updateUI(); }
+    function buyPotionBulk(type, qty) {}
+    function usePotion(type) {}
+    function syncAndFetchRanking() {}
+    function switchRankingType(t) {}
 
-    function buySkill(id) {
-        const sk = skillList.find(s => s.id === id);
-        if (!sk || sk.learned) return;
-        if (player.gold < sk.price) { alert("골드가 부족합니다!"); return; }
-        player.gold -= sk.price;
-        sk.learned = true;
-        sk.level = 1;
-        log(`📜 <span style="color:#2ecc71;">[스킬 습득]</span> **${sk.name}** 습득!`);
-        updateUI();
-    }
-
+    loadGame();
     updateUI();
 </script>
 </body>
