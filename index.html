@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>웹 방치형 RPG - 모바일 최적화</title>
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>웹 방치형 RPG - PC/모바일 모드 지원</title>
     <style>
         * { 
             box-sizing: border-box; 
@@ -23,17 +23,20 @@
             min-height: 100vh;
         }
         
+        /* 메인 컨테이너 기본 설정 */
         .game-wrapper {
             width: 100%;
             max-width: 600px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            transition: max-width 0.3s ease;
         }
 
-        .mobile-tabs { 
+        /* ---------------- [모드 1: 모바일 모드 스타일] ---------------- */
+        body.mobile-mode .mobile-tabs { 
             display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
+            grid-template-columns: repeat(4, 1fr) auto; 
             gap: 4px; 
             position: sticky; 
             top: 0; 
@@ -42,7 +45,32 @@
             padding: 6px 0; 
             border-bottom: 1px solid #222;
         }
-        .tab-btn { 
+        body.mobile-mode .tab-content { display: none; }
+        body.mobile-mode .tab-content.active { display: block; }
+
+        /* ---------------- [모드 2: PC 모드 스타일] ---------------- */
+        body.pc-mode .game-wrapper {
+            max-width: 950px;
+        }
+        body.pc-mode .mobile-tabs {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        body.pc-mode .tab-btn {
+            display: none; /* PC모드에서는 일반 탭 버튼 숨김 */
+        }
+        body.pc-mode .tab-content {
+            display: block !important; /* PC모드에서는 모든 탭 내용을 동시에 표시 */
+        }
+        body.pc-mode .pc-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* 공통 탭 버튼 스타일 */
+        .tab-btn, .mode-toggle-btn { 
             background: #2a2a2a; 
             color: #aaa; 
             border: 1px solid #444; 
@@ -58,10 +86,14 @@
             color: #fff; 
             border-color: #e67e22; 
         }
+        .mode-toggle-btn {
+            background: #3498db;
+            color: #fff;
+            padding: 0 10px;
+            white-space: nowrap;
+        }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
+        /* Card & Common Styles */
         .card { 
             background: #1e1e1e; 
             border-radius: 12px; 
@@ -155,7 +187,7 @@
         .stat-row button { min-height: 32px; padding: 2px 10px; }
     </style>
 </head>
-<body>
+<body class="mobile-mode">
 
 <div id="item-tooltip" onclick="hideTooltip()">
     <div class="tooltip-header">
@@ -169,182 +201,188 @@
 </div>
 
 <div class="game-wrapper">
-    <!-- 모바일 고정 탭 -->
+    <!-- 상단 탭 및 모드 전환 바 -->
     <div class="mobile-tabs">
         <div id="tab-btn-battle" class="tab-btn active" onclick="switchTab('tab-battle', this)">⚔️ 전투</div>
         <div id="tab-btn-status" class="tab-btn" onclick="switchTab('tab-status', this)">👤 상태</div>
         <div id="tab-btn-inventory" class="tab-btn" onclick="switchTab('tab-inventory', this)">🎒 가방</div>
         <div id="tab-btn-shop" class="tab-btn" onclick="switchTab('tab-shop', this)">🏰 상점</div>
+        <button class="mode-toggle-btn" onclick="toggleViewMode()">🖥️ PC버전</button>
     </div>
 
-    <!-- 1. 전투 로그 탭 (기본 활성화) -->
-    <div id="tab-battle" class="tab-content active">
-        <div class="card">
-            <h2>
-                <span>📍 탐험 지역</span>
-                <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
-            </h2>
-            <div class="stage-control">
-                <button class="stage-btn" id="btn-prev-stage" onclick="changeStage(-1)">◀ 이전</button>
-                <div style="text-align: center;">
-                    <strong><span id="current-stage-display" style="color:#f1c40f;">STAGE 1</span></strong><br>
-                    <small style="color:#aaa;">(최고: STAGE <span id="max-stage-display">1</span>)</small>
+    <!-- PC 모드에서 2열 배치를 위한 래퍼 -->
+    <div class="pc-grid-2">
+        <!-- 1. 전투 로그 탭 -->
+        <div id="tab-battle" class="tab-content active">
+            <div class="card">
+                <h2>
+                    <span>📍 탐험 지역</span>
+                    <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
+                </h2>
+                <div class="stage-control">
+                    <button class="stage-btn" id="btn-prev-stage" onclick="changeStage(-1)">◀ 이전</button>
+                    <div style="text-align: center;">
+                        <strong><span id="current-stage-display" style="color:#f1c40f;">STAGE 1</span></strong><br>
+                        <small style="color:#aaa;">(최고: STAGE <span id="max-stage-display">1</span>)</small>
+                    </div>
+                    <button class="stage-btn" id="btn-next-stage" onclick="changeStage(1)">다음 ▶</button>
                 </div>
-                <button class="stage-btn" id="btn-next-stage" onclick="changeStage(1)">다음 ▶</button>
-            </div>
-            
-            <div style="margin-bottom: 8px;">
-                <button id="toggle-btn" onclick="toggleAutoBattle()" style="background:#2ecc71; width: 100%; padding: 12px; font-size: 1rem;">⚔️ 자동 전투 시작</button>
-            </div>
+                
+                <div style="margin-bottom: 8px;">
+                    <button id="toggle-btn" onclick="toggleAutoBattle()" style="background:#2ecc71; width: 100%; padding: 12px; font-size: 1rem;">⚔️ 자동 전투 시작</button>
+                </div>
 
-            <div id="log-box"></div>
-        </div>
-    </div>
-
-    <!-- 2. 용사 상태 탭 -->
-    <div id="tab-status" class="tab-content">
-        <div class="card">
-            <h2>
-                <span>👤 용사 정보</span>
-                <button onclick="changePlayerName()" style="padding: 2px 8px; font-size: 0.75rem; min-height: 28px;">✏️ 변경</button>
-            </h2>
-            <div style="margin-bottom: 6px;">
-                <strong id="p-name" style="color: #f1c40f; font-size: 1.05rem;">용사</strong> (Lv.<span id="p-level">1</span>)
-            </div>
-            <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
-            <div style="margin-top: 8px;">
-                <small>체력 (HP)</small>
-                <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
-                <small>마나 (MP)</small>
-                <div class="bar-container"><div id="mp-bar" class="bar-fill mp-fill"></div></div>
-                <small>경험치 (EXP)</small>
-                <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
-            </div>
-            <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>%</div>
-            <div style="font-size: 0.85rem;">🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
-            <div id="active-buffs-list" style="margin-top: 6px; min-height: 20px;"></div>
-            <div style="margin-top: 8px; font-size: 0.85rem; background: #222; padding: 10px; border-radius: 8px;">
-                🗡️ 무기: <span id="p-weapon" class="rarity-일반 item-hover" onclick="showTooltip(event, player.weapon)">목검 (+5)</span><br>
-                🛡️ 방어구: <span id="p-armor" class="rarity-일반 item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span>
-            </div>
-            <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button onclick="usePotion('hp')" style="background: #c0392b; width: 100%;">❤️ HP 포션 (<span id="p-potions">2</span>)</button>
-                <button onclick="usePotion('mp')" style="background: #2980b9; width: 100%;">🧪 MP 포션 (<span id="p-mp-potions">2</span>)</button>
+                <div id="log-box"></div>
             </div>
         </div>
 
-        <div class="card">
-            <h2>🍁 스탯 & 하이퍼 스탯</h2>
-            <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.85rem;">
-                <span>AP: <strong id="p-stat-pts" style="color:#f39c12;">0</strong></span>
-                <span>HYPER Pt: <strong id="p-hyper-pts" style="color:#9b59b6;">0</strong></span>
-            </div>
-            
-            <div class="stat-row">
-                <span>💪 <strong>STR</strong>: <span id="stat-str">0</span> <small style="color:#aaa;">(공+4)</small></span>
-                <button onclick="addStat('str')">+1</button>
-            </div>
-            <div class="stat-row">
-                <span>🎯 <strong>DEX</strong>: <span id="stat-dex">0</span> <small style="color:#aaa;">(공+2, 크+0.2%)</small></span>
-                <button onclick="addStat('dex')">+1</button>
-            </div>
-            <div class="stat-row">
-                <span>🔮 <strong>INT</strong>: <span id="stat-int">0</span> <small style="color:#aaa;">(MP+15)</small></span>
-                <button onclick="addStat('int')">+1</button>
-            </div>
-            <div class="stat-row">
-                <span>🍀 <strong>LUK</strong>: <span id="stat-luk">0</span> <small style="color:#aaa;">(크+0.5%, 골+0.5%)</small></span>
-                <button onclick="addStat('luk')">+1</button>
+        <!-- 2. 용사 상태 탭 -->
+        <div id="tab-status" class="tab-content">
+            <div class="card">
+                <h2>
+                    <span>👤 용사 정보</span>
+                    <button onclick="changePlayerName()" style="padding: 2px 8px; font-size: 0.75rem; min-height: 28px;">✏️ 변경</button>
+                </h2>
+                <div style="margin-bottom: 6px;">
+                    <strong id="p-name" style="color: #f1c40f; font-size: 1.05rem;">용사</strong> (Lv.<span id="p-level">1</span>)
+                </div>
+                <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
+                <div style="margin-top: 8px;">
+                    <small>체력 (HP)</small>
+                    <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+                    <small>마나 (MP)</small>
+                    <div class="bar-container"><div id="mp-bar" class="bar-fill mp-fill"></div></div>
+                    <small>경험치 (EXP)</small>
+                    <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
+                </div>
+                <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>%</div>
+                <div style="font-size: 0.85rem;">🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
+                <div id="active-buffs-list" style="margin-top: 6px; min-height: 20px;"></div>
+                <div style="margin-top: 8px; font-size: 0.85rem; background: #222; padding: 10px; border-radius: 8px;">
+                    🗡️ 무기: <span id="p-weapon" class="rarity-일반 item-hover" onclick="showTooltip(event, player.weapon)">목검 (+5)</span><br>
+                    🛡️ 방어구: <span id="p-armor" class="rarity-일반 item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span>
+                </div>
+                <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <button onclick="usePotion('hp')" style="background: #c0392b; width: 100%;">❤️ HP 포션 (<span id="p-potions">2</span>)</button>
+                    <button onclick="usePotion('mp')" style="background: #2980b9; width: 100%;">🧪 MP 포션 (<span id="p-mp-potions">2</span>)</button>
+                </div>
             </div>
 
-            <hr style="border-color:#333; margin: 8px 0;">
-            <h3 style="color:#9b59b6; margin-bottom: 6px;">⚡ 하이퍼 스탯</h3>
-            <div class="stat-row">
-                <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
-                <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
-            </div>
-            <div class="stat-row">
-                <span>💥 크리티컬 확률: +<span id="hstat-crit">0</span>%</span>
-                <button onclick="addHyperStat('crit')" style="background:#8e44ad;">+1 Pt</button>
-            </div>
-            <div class="stat-row">
-                <span>🔥 크리티컬 데미지: +<span id="hstat-critdmg">0</span>%</span>
-                <button onclick="addHyperStat('critDmg')" style="background:#8e44ad;">+1 Pt</button>
-            </div>
-            <div class="stat-row">
-                <span>💰 골드 획득량: +<span id="hstat-gold">0</span>%</span>
-                <button onclick="addHyperStat('gold')" style="background:#8e44ad;">+1 Pt</button>
-            </div>
-            <div class="stat-row">
-                <span>👑 보스 데미지: +<span id="hstat-boss">0</span>%</span>
-                <button onclick="addHyperStat('boss')" style="background:#8e44ad;">+1 Pt</button>
-            </div>
-        </div>
-    </div>
+            <div class="card">
+                <h2>🍁 스탯 & 하이퍼 스탯</h2>
+                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>AP: <strong id="p-stat-pts" style="color:#f39c12;">0</strong></span>
+                    <span>HYPER Pt: <strong id="p-hyper-pts" style="color:#9b59b6;">0</strong></span>
+                </div>
+                
+                <div class="stat-row">
+                    <span>💪 <strong>STR</strong>: <span id="stat-str">0</span> <small style="color:#aaa;">(공+4)</small></span>
+                    <button onclick="addStat('str')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🎯 <strong>DEX</strong>: <span id="stat-dex">0</span> <small style="color:#aaa;">(공+2, 크+0.2%)</small></span>
+                    <button onclick="addStat('dex')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🔮 <strong>INT</strong>: <span id="stat-int">0</span> <small style="color:#aaa;">(MP+15)</small></span>
+                    <button onclick="addStat('int')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🍀 <strong>LUK</strong>: <span id="stat-luk">0</span> <small style="color:#aaa;">(크+0.5%, 골+0.5%)</small></span>
+                    <button onclick="addStat('luk')">+1</button>
+                </div>
 
-    <!-- 3. 가방 / 룬 탭 -->
-    <div id="tab-inventory" class="tab-content">
-        <div class="card">
-            <h2>
-                <span>🎒 몬스터 전리품</span>
-                <button onclick="sellAllLoot()" style="background: #e67e22; padding: 4px 10px; font-size: 0.8rem; min-height: 32px;">💰 모두 매각</button>
-            </h2>
-            <div id="loot-container" class="loot-grid">
-                <small style="color: #777;">수집된 전리품이 없습니다.</small>
+                <hr style="border-color:#333; margin: 8px 0;">
+                <h3 style="color:#9b59b6; margin-bottom: 6px;">⚡ 하이퍼 스탯</h3>
+                <div class="stat-row">
+                    <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
+                    <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>💥 크리티컬 확률: +<span id="hstat-crit">0</span>%</span>
+                    <button onclick="addHyperStat('crit')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>🔥 크리티컬 데미지: +<span id="hstat-critdmg">0</span>%</span>
+                    <button onclick="addHyperStat('critDmg')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>💰 골드 획득량: +<span id="hstat-gold">0</span>%</span>
+                    <button onclick="addHyperStat('gold')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>👑 보스 데미지: +<span id="hstat-boss">0</span>%</span>
+                    <button onclick="addHyperStat('boss')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>🔮 룬 소켓 시스템</h2>
-            <button onclick="buyRune()" style="background:#9b59b6; width: 100%; margin-bottom: 8px;">🎲 룬 뽑기 (💎 50 파편)</button>
-            <div id="equipped-runes-list"></div>
         </div>
     </div>
 
-    <!-- 4. 상점 / 스킬 탭 -->
-    <div id="tab-shop" class="tab-content">
-        <div class="card">
-            <h2>🏰 상점 & 스킬 연구소</h2>
-            <div class="shop-equipped-panel">
-                <h3 style="color:#f1c40f; margin-bottom: 4px;">👕 착용 장비</h3>
-                <div class="equipped-item-box">
-                    🗡️ <span id="shop-w-info" class="item-hover" onclick="showTooltip(event, player.weapon)">-</span>
-                </div>
-                <div class="equipped-item-box">
-                    🛡️ <span id="shop-a-info" class="item-hover" onclick="showTooltip(event, player.armor)">-</span>
-                </div>
-            </div>
-
-            <h3>🎲 장비 및 포션 구매</h3>
-            <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 6px;">🗡️ 랜덤 무기 (<span id="cost-weapon">100</span>G)</button>
-            <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 10px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
-            
-            <div class="shop-item">
-                <div>
-                    <span>❤️ HP 포션 (30G)</span><br>
-                    <small style="color:#aaa;">HP 120 회복</small>
-                </div>
-                <div>
-                    <button onclick="buyPotionBulk('hp', 1)" style="background:#27ae60; min-height: 32px; padding: 2px 8px;">1개</button>
-                    <button onclick="buyPotionBulk('hp', 5)" style="background:#27ae60; min-height: 32px; padding: 2px 8px;">5개</button>
-                </div>
-            </div>
-            <div class="shop-item">
-                <div>
-                    <span>🧪 MP 포션 (30G)</span><br>
-                    <small style="color:#aaa;">MP 80 회복</small>
-                </div>
-                <div>
-                    <button onclick="buyPotionBulk('mp', 1)" style="background:#2980b9; min-height: 32px; padding: 2px 8px;">1개</button>
-                    <button onclick="buyPotionBulk('mp', 5)" style="background:#2980b9; min-height: 32px; padding: 2px 8px;">5개</button>
+    <div class="pc-grid-2">
+        <!-- 3. 가방 / 룬 탭 -->
+        <div id="tab-inventory" class="tab-content">
+            <div class="card">
+                <h2>
+                    <span>🎒 몬스터 전리품</span>
+                    <button onclick="sellAllLoot()" style="background: #e67e22; padding: 4px 10px; font-size: 0.8rem; min-height: 32px;">💰 모두 매각</button>
+                </h2>
+                <div id="loot-container" class="loot-grid">
+                    <small style="color: #777;">수집된 전리품이 없습니다.</small>
                 </div>
             </div>
 
-            <h3 style="margin-top:14px;">📜 스킬 배움터</h3>
-            <div id="skill-shop-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
-            
-            <h3>✨ 습득한 스킬 강화</h3>
-            <div id="skill-upgrade-list" style="max-height: 160px; overflow-y: auto;"></div>
+            <div class="card">
+                <h2>🔮 룬 소켓 시스템</h2>
+                <button onclick="buyRune()" style="background:#9b59b6; width: 100%; margin-bottom: 8px;">🎲 룬 뽑기 (💎 50 파편)</button>
+                <div id="equipped-runes-list"></div>
+            </div>
+        </div>
+
+        <!-- 4. 상점 / 스킬 탭 -->
+        <div id="tab-shop" class="tab-content">
+            <div class="card">
+                <h2>🏰 상점 & 스킬 연구소</h2>
+                <div class="shop-equipped-panel">
+                    <h3 style="color:#f1c40f; margin-bottom: 4px;">👕 착용 장비</h3>
+                    <div class="equipped-item-box">
+                        🗡️ <span id="shop-w-info" class="item-hover" onclick="showTooltip(event, player.weapon)">-</span>
+                    </div>
+                    <div class="equipped-item-box">
+                        🛡️ <span id="shop-a-info" class="item-hover" onclick="showTooltip(event, player.armor)">-</span>
+                    </div>
+                </div>
+
+                <h3>🎲 장비 및 포션 구매</h3>
+                <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 6px;">🗡️ 랜덤 무기 (<span id="cost-weapon">100</span>G)</button>
+                <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 10px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
+                
+                <div class="shop-item">
+                    <div>
+                        <span>❤️ HP 포션 (30G)</span><br>
+                        <small style="color:#aaa;">HP 120 회복</small>
+                    </div>
+                    <div>
+                        <button onclick="buyPotionBulk('hp', 1)" style="background:#27ae60; min-height: 32px; padding: 2px 8px;">1개</button>
+                        <button onclick="buyPotionBulk('hp', 5)" style="background:#27ae60; min-height: 32px; padding: 2px 8px;">5개</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div>
+                        <span>🧪 MP 포션 (30G)</span><br>
+                        <small style="color:#aaa;">MP 80 회복</small>
+                    </div>
+                    <div>
+                        <button onclick="buyPotionBulk('mp', 1)" style="background:#2980b9; min-height: 32px; padding: 2px 8px;">1개</button>
+                        <button onclick="buyPotionBulk('mp', 5)" style="background:#2980b9; min-height: 32px; padding: 2px 8px;">5개</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:14px;">📜 스킬 배움터</h3>
+                <div id="skill-shop-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
+                
+                <h3>✨ 습득한 스킬 강화</h3>
+                <div id="skill-upgrade-list" style="max-height: 160px; overflow-y: auto;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -446,9 +484,29 @@
     let isAutoBattling = false;
     let battleInterval = null;
     let currentMonster = null;
+    let isPcMode = false;
+
+    // PC / 모바일 버전 토글 함수
+    function toggleViewMode() {
+        isPcMode = !isPcMode;
+        const body = document.body;
+        const toggleBtn = document.querySelector('.mode-toggle-btn');
+        
+        if (isPcMode) {
+            body.classList.remove('mobile-mode');
+            body.classList.add('pc-mode');
+            toggleBtn.innerText = "📱 모바일버전";
+        } else {
+            body.classList.remove('pc-mode');
+            body.classList.add('mobile-mode');
+            toggleBtn.innerText = "🖥️ PC버전";
+        }
+        localStorage.setItem("RPG_VIEW_MODE", isPcMode ? "PC" : "MOBILE");
+    }
 
     // 모바일 전용 탭 전환 함수
     window.switchTab = function(tabId, btn) {
+        if (isPcMode) return;
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
@@ -571,7 +629,6 @@
         div.innerHTML = msg;
         logBox.appendChild(div);
         
-        // 너무 많은 로그 축적 방지
         if (logBox.children.length > 80) {
             logBox.removeChild(logBox.firstChild);
         }
@@ -1121,7 +1178,6 @@
         updateUI();
     }
 
-    // 모바일 전용 로컬스토리지 저장 및 불러오기 기능 추가
     function saveGame() {
         try {
             const saveData = { player, stage, maxStage, skillList };
@@ -1131,6 +1187,11 @@
 
     function loadGame() {
         try {
+            const savedViewMode = localStorage.getItem("RPG_VIEW_MODE");
+            if (savedViewMode === "PC") {
+                toggleViewMode();
+            }
+
             const raw = localStorage.getItem("RPG_MOBILE_SAVE");
             if (raw) {
                 const data = JSON.parse(raw);
