@@ -2,39 +2,155 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>😻 또치의 방치 RPG 😻 </title>
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>😻 또치의 방치 RPG 😻</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #fff; padding: 20px; display: flex; justify-content: center; position: relative; }
-        .game-container { width: 100%; max-width: 950px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none;
+        }
+        body { 
+            background-color: #121212; 
+            color: #fff; 
+            padding: 10px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start;
+            min-height: 100vh;
+        }
         
-        .card { background: #1e1e1e; border-radius: 10px; padding: 15px; border: 1px solid #333; }
-        .full-width { grid-column: span 2; }
+        /* 메인 게임 컨테이너 */
+        .game-wrapper {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: max-width 0.3s ease;
+        }
+
+        /* ---------------- [상단 모드 전환 및 모바일 탭 바] ---------------- */
+        .navigation-bar {
+            display: flex;
+            gap: 4px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #121212;
+            padding: 6px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .tab-btn, .mode-toggle-btn { 
+            background: #2a2a2a; 
+            color: #aaa; 
+            border: 1px solid #444; 
+            border-radius: 8px; 
+            padding: 8px 0; 
+            font-size: 0.8rem; 
+            font-weight: bold; 
+            text-align: center;
+            cursor: pointer;
+            flex: 1;
+        }
+        .tab-btn.active { 
+            background: #e67e22; 
+            color: #fff; 
+            border-color: #e67e22; 
+        }
+        .mode-toggle-btn {
+            background: #3498db;
+            color: #fff;
+            border-color: #2980b9;
+            flex: 1.2;
+            white-space: nowrap;
+        }
+
+        /* ---------------- [모드 1: 모바일 모드] ---------------- */
+        body.mobile-mode .tab-content { display: none; }
+        body.mobile-mode .tab-content.active { display: block; }
+
+        /* ---------------- [모드 2: PC 모드] ---------------- */
+        body.pc-mode .game-wrapper {
+            max-width: 980px;
+        }
+        body.pc-mode .navigation-bar {
+            justify-content: flex-end;
+        }
+        body.pc-mode .tab-btn {
+            display: none; /* PC모드에서는 일반 탭 버튼 숨김 */
+        }
+        body.pc-mode .mode-toggle-btn {
+            flex: 0 0 140px;
+        }
+        body.pc-mode .tab-content {
+            display: block !important; /* 모든 섹션을 화면에 배치 */
+        }
+        body.pc-mode .pc-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* ---------------- [공통 카드 & 엘리먼트 스타일] ---------------- */
+        .card { 
+            background: #1e1e1e; 
+            border-radius: 12px; 
+            padding: 14px; 
+            border: 1px solid #333; 
+            margin-bottom: 10px;
+        }
         
-        h2 { border-bottom: 2px solid #444; padding-bottom: 8px; margin-bottom: 12px; font-size: 1.1rem; color: #f1c40f; }
-        h3 { font-size: 0.95rem; color: #e67e22; margin-bottom: 6px; }
-        
-        .bar-container { background: #333; border-radius: 10px; height: 14px; width: 100%; overflow: hidden; margin: 3px 0 6px 0; }
+        h2 { 
+            border-bottom: 2px solid #444; 
+            padding-bottom: 8px; 
+            margin-bottom: 12px; 
+            font-size: 1rem; 
+            color: #f1c40f; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        h3 { font-size: 0.9rem; color: #e67e22; margin-bottom: 6px; }
+
+        .bar-container { background: #333; border-radius: 8px; height: 14px; width: 100%; overflow: hidden; margin: 3px 0 8px 0; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
         .hp-fill { background: #e74c3c; }
         .mp-fill { background: #3498db; }
         .exp-fill { background: #f39c12; }
         
-        button { background: #34495e; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; margin: 2px; font-weight: bold; transition: 0.2s; font-size: 0.85rem; }
-        button:hover { background: #2c3e50; }
-        button:disabled { background: #444; color: #777; cursor: not-allowed; opacity: 0.6; }
+        button { 
+            background: #34495e; 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.15s; 
+            font-size: 0.85rem; 
+            min-height: 36px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        button:active { transform: scale(0.97); opacity: 0.9; }
+        button:disabled { background: #444 !important; color: #777 !important; cursor: not-allowed; opacity: 0.6; transform: none; }
         
-        .stage-control { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; }
-        .stage-btn { background: #e67e22; padding: 6px 12px; margin: 0; }
+        .stage-control { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; }
+        .stage-btn { background: #e67e22; padding: 6px 12px; min-height: 34px; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .shop-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 8px 10px; margin-bottom: 6px; border-radius: 5px; font-size: 0.85rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .shop-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 8px 10px; margin-bottom: 6px; border-radius: 6px; font-size: 0.85rem; }
         
-        .shop-equipped-panel { background: #151515; border: 1px solid #444; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem; }
-        .equipped-item-box { background: #222; border-left: 3px solid #f1c40f; padding: 6px 8px; margin-top: 4px; border-radius: 3px; }
+        .shop-equipped-panel { background: #151515; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.85rem; }
+        .equipped-item-box { background: #222; border-left: 3px solid #f1c40f; padding: 6px 8px; margin-top: 4px; border-radius: 4px; }
 
-        #log-box { height: 220px; overflow-y: auto; background: #0a0a0a; border: 1px solid #222; border-radius: 5px; padding: 10px; font-size: 0.85rem; line-height: 1.4; }
+        #log-box { height: 240px; overflow-y: auto; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 10px; font-size: 0.8rem; line-height: 1.5; -webkit-overflow-scrolling: touch; }
         .log-line { margin-bottom: 4px; }
         
         /* 8가지 아이템 및 룬 등급 색상 */
@@ -47,42 +163,39 @@
         .rarity-초월 { color: #e74c3c; font-weight: bold; }
         .rarity-신성 { color: #00ffff; font-weight: bold; text-shadow: 0 0 5px #00ffff; }
         
-        .item-hover { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+        .item-hover { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; display: inline-block; }
 
+        /* 툴팁 */
         #item-tooltip {
-            position: absolute; display: none; width: 250px; background: rgba(10, 10, 15, 0.95);
-            border: 2px solid #f1c40f; border-radius: 8px; padding: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.8);
-            z-index: 9999; pointer-events: none; font-size: 0.8rem; line-height: 1.4;
+            position: fixed; display: none; width: 85%; max-width: 300px; background: rgba(20, 20, 25, 0.98);
+            border: 2px solid #f1c40f; border-radius: 12px; padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.9);
+            z-index: 9999; font-size: 0.85rem; line-height: 1.4; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%);
         }
-        .tooltip-header { text-align: center; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 8px; }
+        .tooltip-header { text-align: center; border-bottom: 1px solid #444; padding-bottom: 6px; margin-bottom: 6px; }
         .tooltip-title { font-weight: bold; font-size: 0.95rem; }
         .tooltip-rarity { font-size: 0.75rem; margin-top: 2px; }
         .tooltip-stat { color: #2ecc71; font-weight: bold; margin-bottom: 6px; }
         .tooltip-effect { color: #f1c40f; font-size: 0.75rem; background: rgba(241, 196, 15, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed #f1c40f; margin-top: 4px; }
-        .tooltip-desc { color: #888; font-size: 0.75rem; margin-top: 8px; border-top: 1px solid #333; padding-top: 6px; }
+        .tooltip-desc { color: #aaa; font-size: 0.75rem; margin-top: 6px; border-top: 1px solid #333; padding-top: 6px; }
 
-        .rune-badge { display: block; background: #222; padding: 6px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #444; font-size: 0.8rem; }
-        .buff-badge { display: inline-block; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
-        .skill-type-tag { font-size: 0.7rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-right: 4px; }
+        .rune-badge { display: block; background: #222; padding: 8px; border-radius: 6px; margin-bottom: 6px; border: 1px solid #444; font-size: 0.8rem; }
+        .buff-badge { display: inline-block; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 2px; }
+        .skill-type-tag { font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-right: 4px; }
         .tag-active { background: #e74c3c; color: #fff; }
         .tag-buff { background: #f39c12; color: #fff; }
         .tag-passive { background: #2980b9; color: #fff; }
         
-        .loot-grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 100px; overflow-y: auto; background: #111; padding: 8px; border-radius: 5px; border: 1px solid #222; }
-        .loot-item { background: #222; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
+        .loot-grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 130px; overflow-y: auto; background: #111; padding: 8px; border-radius: 6px; border: 1px solid #222; -webkit-overflow-scrolling: touch; }
+        .loot-item { background: #222; border: 1px solid #444; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
         
-        .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.85rem; }
-
-        @media (max-width: 768px) {
-            .game-container { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            .grid-2 { grid-template-columns: 1fr; }
-        }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.85rem; }
+        .stat-row button { min-height: 30px; padding: 2px 8px; }
     </style>
 </head>
-<body>
+<body class="mobile-mode">
 
-<div id="item-tooltip">
+<!-- 아이템 클릭/터치 툴팁 모달 -->
+<div id="item-tooltip" onclick="hideTooltip()">
     <div class="tooltip-header">
         <div id="tt-title" class="tooltip-title">아이템 이름</div>
         <div id="tt-rarity" class="tooltip-rarity">등급</div>
@@ -90,183 +203,194 @@
     <div id="tt-stat" class="tooltip-stat">공격력 +0</div>
     <div id="tt-effects-list"></div>
     <div id="tt-desc" class="tooltip-desc">설명</div>
+    <div style="text-align: center; margin-top: 8px; color: #666; font-size: 0.7rem;">(터치하여 닫기)</div>
 </div>
 
-<div class="game-container">
-    <!-- 용사 상태 창 -->
-    <div class="card">
-        <h2>👤 용사 상태</h2>
-        <div>
-            <strong>이름:</strong> <span id="p-name" style="color: #f1c40f; font-weight: bold;">용사</span>
-            <button onclick="changePlayerName()" style="padding: 2px 6px; font-size: 0.75rem; margin-left: 4px;">✏️ 변경</button>
-            (Lv.<span id="p-level">1</span>)
-        </div>
-        <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
-        <div style="margin-top: 6px;">
-            <small>체력 (HP)</small>
-            <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
-            <small>마나 (MP)</small>
-            <div class="bar-container"><div id="mp-bar" class="bar-fill mp-fill"></div></div>
-            <small>경험치 (EXP)</small>
-            <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
-        </div>
-        <div>⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>%</div>
-        <div>🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
-        <div id="active-buffs-list" style="margin-top: 4px; min-height: 20px;"></div>
-        <div style="margin-top: 6px; font-size: 0.85rem; background: #222; padding: 8px; border-radius: 6px;">
-            🗡️ 무기: <span id="p-weapon" class="rarity-일반 item-hover" onmousemove="showTooltip(event, player.weapon)" onmouseleave="hideTooltip()">목검 (+5)</span><br>
-            🛡️ 방어구: <span id="p-armor" class="rarity-일반 item-hover" onmousemove="showTooltip(event, player.armor)" onmouseleave="hideTooltip()">천 옷 (+20)</span>
-        </div>
-        <div style="margin-top: 6px; display: flex; gap: 5px;">
-            <div>🧪 HP 포션: <span id="p-potions">2</span>개 <button onclick="usePotion('hp')" style="padding: 2px 6px;">사용</button></div>
-            <div>🧪 MP 포션: <span id="p-mp-potions">2</span>개 <button onclick="usePotion('mp')" style="padding: 2px 6px; background: #2980b9;">사용</button></div>
-        </div>
+<div class="game-wrapper">
+    <!-- 상단 네비게이션 (모바일 탭 + 모드 전환 버튼) -->
+    <div class="navigation-bar">
+        <div id="tab-btn-battle" class="tab-btn active" onclick="switchTab('tab-battle', this)">⚔️ 전투</div>
+        <div id="tab-btn-status" class="tab-btn" onclick="switchTab('tab-status', this)">👤 상태</div>
+        <div id="tab-btn-inventory" class="tab-btn" onclick="switchTab('tab-inventory', this)">🎒 가방</div>
+        <div id="tab-btn-shop" class="tab-btn" onclick="switchTab('tab-shop', this)">🏰 상점</div>
+        <button class="mode-toggle-btn" onclick="toggleViewMode()">🖥️ PC버전</button>
     </div>
 
-    <!-- 기본 스탯 & 하이퍼 스탯 창 -->
-    <div class="card">
-        <h2>🍁 메이플 스탯 & 하이퍼 스탯</h2>
-        <div style="margin-bottom: 6px; display: flex; justify-content: space-between; font-size: 0.85rem;">
-            <span>AP: <strong id="p-stat-pts" style="color:#f39c12;">0</strong></span>
-            <span>HYPER Pt: <strong id="p-hyper-pts" style="color:#9b59b6;">0</strong> <small style="color:#aaa;">(10레벨마다 +1)</small></span>
-        </div>
-        
-        <div class="stat-row">
-            <span>💪 <strong>STR</strong>: <span id="stat-str">0</span> <small style="color:#aaa;">(공격력+4)</small></span>
-            <button onclick="addStat('str')">+1</button>
-        </div>
-        <div class="stat-row">
-            <span>🎯 <strong>DEX</strong>: <span id="stat-dex">0</span> <small style="color:#aaa;">(공격력+2, 크리+0.2%)</small></span>
-            <button onclick="addStat('dex')">+1</button>
-        </div>
-        <div class="stat-row">
-            <span>🔮 <strong>INT</strong>: <span id="stat-int">0</span> <small style="color:#aaa;">(MP+15, 스킬뎀+1%)</small></span>
-            <button onclick="addStat('int')">+1</button>
-        </div>
-        <div class="stat-row">
-            <span>🍀 <strong>LUK</strong>: <span id="stat-luk">0</span> <small style="color:#aaa;">(크리+0.5%, 골드+0.5%)</small></span>
-            <button onclick="addStat('luk')">+1</button>
+    <!-- PC 모드에서 2열 배치를 위한 그리드 래퍼 1 -->
+    <div class="pc-grid-2">
+        <!-- 1. 전투 및 로그 탭 -->
+        <div id="tab-battle" class="tab-content active">
+            <div class="card">
+                <h2>
+                    <span>📍 탐험 및 전투</span>
+                    <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
+                </h2>
+                <div class="stage-control">
+                    <button class="stage-btn" id="btn-prev-stage" onclick="changeStage(-1)">◀ 이전</button>
+                    <div style="text-align: center;">
+                        <strong><span id="current-stage-display" style="color:#f1c40f;">STAGE 1</span></strong><br>
+                        <small style="color:#aaa;">(최고: STAGE <span id="max-stage-display">1</span>)</small>
+                    </div>
+                    <button class="stage-btn" id="btn-next-stage" onclick="changeStage(1)">다음 ▶</button>
+                </div>
+                
+                <div style="margin-bottom: 8px;">
+                    <button id="toggle-btn" onclick="toggleAutoBattle()" style="background:#2ecc71; width: 100%; padding: 10px; font-size: 0.95rem;">⚔️ 자동 전투 시작</button>
+                </div>
+
+                <div id="log-box"></div>
+            </div>
         </div>
 
-        <hr style="border-color:#333; margin: 8px 0;">
-        <h3 style="color:#9b59b6; margin-bottom: 4px;">⚡ 하이퍼 스탯</h3>
-        <div class="stat-row">
-            <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
-            <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
-        </div>
-        <div class="stat-row">
-            <span>💥 크리티컬 확률: +<span id="hstat-crit">0</span>%</span>
-            <button onclick="addHyperStat('crit')" style="background:#8e44ad;">+1 Pt</button>
-        </div>
-        <div class="stat-row">
-            <span>🔥 크리티컬 데미지: +<span id="hstat-critdmg">0</span>%</span>
-            <button onclick="addHyperStat('critDmg')" style="background:#8e44ad;">+1 Pt</button>
-        </div>
-        <div class="stat-row">
-            <span>💰 골드 획득량: +<span id="hstat-gold">0</span>%</span>
-            <button onclick="addHyperStat('gold')" style="background:#8e44ad;">+1 Pt</button>
-        </div>
-        <div class="stat-row">
-            <span>👑 보스 데미지: +<span id="hstat-boss">0</span>%</span>
-            <button onclick="addHyperStat('boss')" style="background:#8e44ad;">+1 Pt</button>
-        </div>
-
-        <hr style="border-color:#333; margin: 8px 0;">
-        <div>
-            <button id="toggle-btn" onclick="toggleAutoBattle()" style="background:#2ecc71; width: 100%; padding: 8px; font-size: 0.95rem;">⚔️ 자동 전투 시작</button>
-        </div>
-    </div>
-
-    <!-- 🎒 전리품 가방 -->
-    <div class="card full-width">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 8px; margin-bottom: 8px;">
-            <h2 style="border: none; margin: 0; padding: 0;">🎒 몬스터 수집 전리품 가방</h2>
-            <button onclick="sellAllLoot()" style="background: #e67e22; padding: 4px 10px; font-size: 0.8rem;">💰 전리품 모두 매각</button>
-        </div>
-        <div id="loot-container" class="loot-grid">
-            <small style="color: #777;">수집된 전리품이 없습니다.</small>
-        </div>
-    </div>
-
-    <!-- 룬 소켓 & 스킬 강화 -->
-    <div class="card full-width">
-        <h2>🔮 8단계 등급 룬 소켓 & 📜 스킬 연구소</h2>
-        <div class="grid-2">
-            <div>
-                <h3>🔷 룬 소켓 (최대 3개 장착)</h3>
+        <!-- 2. 용사 상태 및 스탯 탭 -->
+        <div id="tab-status" class="tab-content">
+            <div class="card">
+                <h2>
+                    <span>👤 용사 정보</span>
+                    <button onclick="changePlayerName()" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">✏️ 변경</button>
+                </h2>
                 <div style="margin-bottom: 6px;">
-                    <button onclick="buyRune()" style="background:#9b59b6; width: 100%;">🎲 8단계 등급 룬 뽑기 (💎 50 파편)</button>
+                    <strong id="p-name" style="color: #f1c40f; font-size: 1.05rem;">지존용사</strong> (Lv.<span id="p-level">1</span>)
                 </div>
-                <div id="equipped-runes-list" style="margin-top: 8px;"></div>
+                <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
+                <div style="margin-top: 8px;">
+                    <small>체력 (HP)</small>
+                    <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+                    <small>마나 (MP)</small>
+                    <div class="bar-container"><div id="mp-bar" class="bar-fill mp-fill"></div></div>
+                    <small>경험치 (EXP)</small>
+                    <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
+                </div>
+                <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>%</div>
+                <div style="font-size: 0.85rem;">🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
+                <div id="active-buffs-list" style="margin-top: 6px; min-height: 20px;"></div>
+                <div style="margin-top: 8px; font-size: 0.85rem; background: #222; padding: 10px; border-radius: 8px;">
+                    🗡️ 무기: <span id="p-weapon" class="rarity-일반 item-hover" onclick="showTooltip(event, player.weapon)">목검 (+5)</span><br>
+                    🛡️ 방어구: <span id="p-armor" class="rarity-일반 item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span>
+                </div>
+                <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <button onclick="usePotion('hp')" style="background: #c0392b; width: 100%;">❤️ HP 포션 (<span id="p-potions">2</span>)</button>
+                    <button onclick="usePotion('mp')" style="background: #2980b9; width: 100%;">🧪 MP 포션 (<span id="p-mp-potions">2</span>)</button>
+                </div>
             </div>
-            <div>
-                <h3>📜 스킬 연구 & 강화</h3>
-                <div id="skill-upgrade-list" style="max-height: 200px; overflow-y: auto;"></div>
+
+            <div class="card">
+                <h2>🍁 스탯 & 하이퍼 스탯</h2>
+                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>AP: <strong id="p-stat-pts" style="color:#f39c12;">0</strong></span>
+                    <span>HYPER Pt: <strong id="p-hyper-pts" style="color:#9b59b6;">0</strong></span>
+                </div>
+                
+                <div class="stat-row">
+                    <span>💪 <strong>STR</strong>: <span id="stat-str">0</span> <small style="color:#aaa;">(공+4)</small></span>
+                    <button onclick="addStat('str')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🎯 <strong>DEX</strong>: <span id="stat-dex">0</span> <small style="color:#aaa;">(공+2, 크+0.2%)</small></span>
+                    <button onclick="addStat('dex')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🔮 <strong>INT</strong>: <span id="stat-int">0</span> <small style="color:#aaa;">(MP+15)</small></span>
+                    <button onclick="addStat('int')">+1</button>
+                </div>
+                <div class="stat-row">
+                    <span>🍀 <strong>LUK</strong>: <span id="stat-luk">0</span> <small style="color:#aaa;">(크+0.5%, 골+0.5%)</small></span>
+                    <button onclick="addStat('luk')">+1</button>
+                </div>
+
+                <hr style="border-color:#333; margin: 8px 0;">
+                <h3 style="color:#9b59b6; margin-bottom: 6px;">⚡ 하이퍼 스탯</h3>
+                <div class="stat-row">
+                    <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
+                    <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>💥 크리티컬 확률: +<span id="hstat-crit">0</span>%</span>
+                    <button onclick="addHyperStat('crit')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>🔥 크리티컬 데미지: +<span id="hstat-critdmg">0</span>%</span>
+                    <button onclick="addHyperStat('critDmg')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>💰 골드 획득량: +<span id="hstat-gold">0</span>%</span>
+                    <button onclick="addHyperStat('gold')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
+                <div class="stat-row">
+                    <span>👑 보스 데미지: +<span id="hstat-boss">0</span>%</span>
+                    <button onclick="addHyperStat('boss')" style="background:#8e44ad;">+1 Pt</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 상점 -->
-    <div class="card full-width">
-        <h2>🏰 마을 상점 & 확장 스킬 센터</h2>
-        <div class="grid-2">
-            <div>
+    <!-- PC 모드에서 2열 배치를 위한 그리드 래퍼 2 -->
+    <div class="pc-grid-2">
+        <!-- 3. 가방 / 룬 탭 -->
+        <div id="tab-inventory" class="tab-content">
+            <div class="card">
+                <h2>
+                    <span>🎒 몬스터 수집 가방</span>
+                    <button onclick="sellAllLoot()" style="background: #e67e22; padding: 2px 8px; font-size: 0.75rem; min-height: 28px;">💰 모두 매각</button>
+                </h2>
+                <div id="loot-container" class="loot-grid">
+                    <small style="color: #777;">수집된 전리품이 없습니다.</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🔮 룬 소켓 시스템</h2>
+                <button onclick="buyRune()" style="background:#9b59b6; width: 100%; margin-bottom: 8px;">🎲 룬 뽑기 (💎 50 파편)</button>
+                <div id="equipped-runes-list"></div>
+            </div>
+        </div>
+
+        <!-- 4. 상점 / 스킬 탭 -->
+        <div id="tab-shop" class="tab-content">
+            <div class="card">
+                <h2>🏰 상점 & 스킬 센터</h2>
                 <div class="shop-equipped-panel">
-                    <h3 style="color:#f1c40f; margin-bottom: 4px;">👕 현재 착용 중인 장비</h3>
+                    <h3 style="color:#f1c40f; margin-bottom: 4px;">👕 착용 장비</h3>
                     <div class="equipped-item-box">
-                        🗡️ <strong>착용 무기:</strong> <span id="shop-w-info" class="item-hover" onmousemove="showTooltip(event, player.weapon)" onmouseleave="hideTooltip()">-</span>
+                        🗡️ <span id="shop-w-info" class="item-hover" onclick="showTooltip(event, player.weapon)">-</span>
                     </div>
                     <div class="equipped-item-box">
-                        🛡️ <strong>착용 방어구:</strong> <span id="shop-a-info" class="item-hover" onmousemove="showTooltip(event, player.armor)" onmouseleave="hideTooltip()">-</span>
+                        🛡️ <span id="shop-a-info" class="item-hover" onclick="showTooltip(event, player.armor)">-</span>
                     </div>
                 </div>
 
-                <h3>🎲 장비 및 대량 포션 구매</h3>
-                <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 4px;">🗡️ 랜덤 무기 뽑기 (<span id="cost-weapon">100</span>G)</button>
-                <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 8px;">🛡️ 랜덤 방어구 뽑기 (<span id="cost-armor">100</span>G)</button>
+                <h3>🎲 장비 및 포션 구매</h3>
+                <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 6px;">🗡️ 랜덤 무기 (<span id="cost-weapon">100</span>G)</button>
+                <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 10px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
                 
                 <div class="shop-item">
                     <div>
-                        <span>❤️ HP 포션 (개당 30G)</span><br>
+                        <span>❤️ HP 포션 (30G)</span><br>
                         <small style="color:#aaa;">HP 120 회복</small>
                     </div>
                     <div>
-                        <button onclick="buyPotionBulk('hp', 1)" style="background:#27ae60;">1개</button>
-                        <button onclick="buyPotionBulk('hp', 5)" style="background:#27ae60;">5개</button>
-                        <button onclick="buyPotionBulk('hp', 10)" style="background:#27ae60;">10개</button>
+                        <button onclick="buyPotionBulk('hp', 1)" style="background:#27ae60; min-height: 30px; padding: 2px 8px;">1개</button>
+                        <button onclick="buyPotionBulk('hp', 5)" style="background:#27ae60; min-height: 30px; padding: 2px 8px;">5개</button>
                     </div>
                 </div>
                 <div class="shop-item">
                     <div>
-                        <span>🧪 MP 포션 (개당 30G)</span><br>
+                        <span>🧪 MP 포션 (30G)</span><br>
                         <small style="color:#aaa;">MP 80 회복</small>
                     </div>
                     <div>
-                        <button onclick="buyPotionBulk('mp', 1)" style="background:#2980b9;">1개</button>
-                        <button onclick="buyPotionBulk('mp', 5)" style="background:#2980b9;">5개</button>
-                        <button onclick="buyPotionBulk('mp', 10)" style="background:#2980b9;">10개</button>
+                        <button onclick="buyPotionBulk('mp', 1)" style="background:#2980b9; min-height: 30px; padding: 2px 8px;">1개</button>
+                        <button onclick="buyPotionBulk('mp', 5)" style="background:#2980b9; min-height: 30px; padding: 2px 8px;">5개</button>
                     </div>
                 </div>
-            </div>
-            <div>
-                <h3>📜 확장 스킬 배움터</h3>
-                <div id="skill-shop-list" style="max-height: 280px; overflow-y: auto;"></div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 전투 로그 창 -->
-    <div class="card full-width">
-        <h2>📍 전투 관리 <span id="mode-indicator" style="font-size:0.9rem; color:#2ecc71;">[일반 스테이지]</span></h2>
-        <div class="stage-control" id="stage-control-box">
-            <button class="stage-btn" id="btn-prev-stage" onclick="changeStage(-1)">◀ 이전 스테이지</button>
-            <div>
-                <strong>현재 탐험: <span id="current-stage-display" style="color:#f1c40f;">STAGE 1</span></strong>
-                <small style="color:#aaa;">(최고: STAGE <span id="max-stage-display">1</span>)</small>
+                <h3 style="margin-top:12px;">📜 스킬 배움터</h3>
+                <div id="skill-shop-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 10px;"></div>
+                
+                <h3>✨ 보유 스킬 강화</h3>
+                <div id="skill-upgrade-list" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
-            <button class="stage-btn" id="btn-next-stage" onclick="changeStage(1)">다음 스테이지 ▶</button>
         </div>
-        <div id="log-box"></div>
     </div>
 </div>
 
@@ -292,11 +416,6 @@
     ];
 
     const bossTitles = ["파멸의", "심연의", "저주받은", "지옥의", "태초의"];
-
-    const monsterSkills = [
-        { name: "🛡️ 반사", type: "REFLECT", chance: 0.25 },
-        { name: "🩸 적 흡혈", type: "DRAIN", chance: 0.30 }
-    ];
 
     const itemData = {
         rarities: [
@@ -351,7 +470,7 @@
         { id: 24, category: "passive", name: "💰 탐욕의 눈빛", statType: "goldBonus", valPerLevel: 0.05, price: 700, learned: false, level: 0, desc: "상시 골드 획득량 증가" }
     ];
 
-    const player = {
+    let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
         gold: 200, shards: 0, statPts: 0, hyperPts: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
@@ -372,6 +491,35 @@
     let isAutoBattling = false;
     let battleInterval = null;
     let currentMonster = null;
+    let isPcMode = false;
+
+    // ---------------- [PC / 모바일 모드 토글] ----------------
+    function toggleViewMode() {
+        isPcMode = !isPcMode;
+        const body = document.body;
+        const toggleBtn = document.querySelector('.mode-toggle-btn');
+        
+        if (isPcMode) {
+            body.classList.remove('mobile-mode');
+            body.classList.add('pc-mode');
+            toggleBtn.innerText = "📱 모바일버전";
+        } else {
+            body.classList.remove('pc-mode');
+            body.classList.add('mobile-mode');
+            toggleBtn.innerText = "🖥️ PC버전";
+        }
+    }
+
+    // ---------------- [모바일 탭 전환] ----------------
+    window.switchTab = function(tabId, btn) {
+        if (isPcMode) return;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) targetTab.classList.add('active');
+        if (btn) btn.classList.add('active');
+    };
 
     function changePlayerName() {
         const newName = prompt("변경할 이름을 입력하세요:", player.name);
@@ -383,6 +531,8 @@
     }
 
     function showTooltip(event, item) {
+        if (!item) return;
+        event.stopPropagation();
         const tooltip = document.getElementById("item-tooltip");
         const title = document.getElementById("tt-title");
         const rarity = document.getElementById("tt-rarity");
@@ -390,13 +540,13 @@
         const effectsList = document.getElementById("tt-effects-list");
         const desc = document.getElementById("tt-desc");
 
-        title.innerText = item.name;
-        title.className = `tooltip-title ${item.color}`;
-        rarity.innerText = `[${item.rarity} 등급]`;
-        rarity.className = `tooltip-rarity ${item.color}`;
+        title.innerText = item.name || "";
+        title.className = `tooltip-title ${item.color || ''}`;
+        rarity.innerText = `[${item.rarity || '일반'} 등급]`;
+        rarity.className = `tooltip-rarity ${item.color || ''}`;
 
-        if (item.type === "weapon") stat.innerText = `⚔️ 공격력 +${item.atk}`;
-        else stat.innerText = `🛡️ 체력 +${item.hp}`;
+        if (item.type === "weapon") stat.innerText = `⚔️ 공격력 +${item.atk || 0}`;
+        else stat.innerText = `🛡️ 체력 +${item.hp || 0}`;
 
         effectsList.innerHTML = "";
         if (item.effects && item.effects.length > 0) {
@@ -409,8 +559,6 @@
         }
 
         desc.innerText = item.desc || "특별한 기운이 느껴집니다.";
-        tooltip.style.left = (event.pageX + 15) + "px";
-        tooltip.style.top = (event.pageY + 15) + "px";
         tooltip.style.display = "block";
     }
 
@@ -422,7 +570,9 @@
         return "";
     }
 
-    function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; }
+    function hideTooltip() { 
+        document.getElementById("item-tooltip").style.display = "none"; 
+    }
 
     function getRuneBonus(statName) {
         return player.equippedRunes
@@ -478,10 +628,15 @@
 
     function log(msg) {
         const logBox = document.getElementById("log-box");
+        if (!logBox) return;
         const div = document.createElement("div");
         div.className = "log-line";
         div.innerHTML = msg;
         logBox.appendChild(div);
+        
+        if (logBox.children.length > 100) {
+            logBox.removeChild(logBox.firstChild);
+        }
         logBox.scrollTop = logBox.scrollHeight;
     }
 
@@ -497,7 +652,7 @@
 
         lootKeys.forEach(key => {
             const item = player.inventory[key];
-            if (item.count > 0) {
+            if (item && item.count > 0) {
                 const div = document.createElement("div");
                 div.className = "loot-item";
                 div.innerHTML = `📦 <strong>${key}</strong> x${item.count} <span style="color:#f1c40f;">(${item.val * item.count}G)</span>`;
@@ -510,7 +665,7 @@
         let totalGold = 0;
         Object.keys(player.inventory).forEach(key => {
             const item = player.inventory[key];
-            totalGold += item.val * item.count;
+            if (item) totalGold += item.val * item.count;
         });
 
         if (totalGold === 0) { alert("매각할 전리품이 없습니다!"); return; }
@@ -586,9 +741,9 @@
         document.getElementById("cost-weapon").innerText = drawCost;
         document.getElementById("cost-armor").innerText = drawCost;
 
-        document.getElementById("hp-bar").style.width = Math.max(0, (player.hp / getTotalMaxHp()) * 100) + "%";
-        document.getElementById("mp-bar").style.width = Math.max(0, (player.mp / getTotalMaxMp()) * 100) + "%";
-        document.getElementById("exp-bar").style.width = (player.exp / player.maxExp * 100) + "%";
+        document.getElementById("hp-bar").style.width = Math.max(0, Math.min(100, (player.hp / getTotalMaxHp()) * 100)) + "%";
+        document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
+        document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
 
         renderSkillShop();
         renderSkillUpgrades();
@@ -610,7 +765,7 @@
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span class="${rune.color}">🔷 [${rune.rarity}] ${rune.name}</span>
-                    <button onclick="unequipRune(${idx})" style="padding:1px 5px; font-size:0.7rem; background:#c0392b;">해제</button>
+                    <button onclick="unequipRune(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#c0392b; min-height:28px;">해제</button>
                 </div>
                 <small style="color:#ccc;">${rune.desc}${valDisp}${rune.unit}</small>
             `;
@@ -645,7 +800,7 @@
         };
 
         player.equippedRunes.push(runeObj);
-        log(`🔮 <span class="${runeObj.color}">[8단계 룬 획득]</span> **[${runeObj.rarity}] ${runeObj.name}** 장착!`);
+        log(`🔮 <span class="${runeObj.color}">[룬 획득]</span> **[${runeObj.rarity}] ${runeObj.name}** 장착!`);
         updateUI();
     }
 
@@ -672,7 +827,7 @@
                     ${tagHtml}<strong>${sk.name}</strong> <small style="color:#aaa;">${sk.costMp ? '(MP ' + sk.costMp + ')' : ''}</small><br>
                     <small style="color:#888;">${sk.desc}</small>
                 </div>
-                <button onclick="buySkill(${sk.id})" ${sk.learned ? "disabled" : ""}>${btnText}</button>
+                <button onclick="buySkill(${sk.id})" ${sk.learned ? "disabled" : ""} style="min-height:30px; padding:2px 8px;">${btnText}</button>
             `;
             container.appendChild(div);
         });
@@ -696,7 +851,7 @@
                 infoText = `계수: ${(sk.mult + (sk.level * 0.4)).toFixed(1)}배`;
             } else if (sk.category === "buff") {
                 const curEffect = Math.round(((sk.buffAtkPercent || sk.buffHpPercent || sk.buffCritPercent) + (sk.level - 1) * 0.05) * 100);
-                infoText = `버프 효과: +${curEffect}% (지속: ${sk.duration}턴)`;
+                infoText = `버프 효과: +${curEffect}% (${sk.duration}턴)`;
             } else {
                 infoText = `효과: +${Math.round((sk.valPerLevel * sk.level) * 100)}%`;
             }
@@ -706,7 +861,7 @@
                     <strong>${sk.name} (+${sk.level})</strong><br>
                     <small style="color:#f39c12;">${infoText}</small>
                 </div>
-                <button onclick="upgradeSkill(${sk.id})" style="background:#8e44ad;">강화 (💎 ${upgradeCost})</button>
+                <button onclick="upgradeSkill(${sk.id})" style="background:#8e44ad; min-height:30px; padding:2px 8px;">강화 (💎 ${upgradeCost})</button>
             `;
             container.appendChild(div);
         });
@@ -719,7 +874,7 @@
         if (player.shards < upgradeCost) { alert("💎 룬 파편이 부족합니다!"); return; }
         player.shards -= upgradeCost;
         sk.level++;
-        log(`✨ <span style="color:#f1c40f;">[스킬 강화]</span> **${sk.name}** +${sk.level} 달성! (능력 효과 증가)`);
+        log(`✨ <span style="color:#f1c40f;">[스킬 강화]</span> **${sk.name}** +${sk.level} 달성!`);
         updateUI();
     }
 
@@ -788,7 +943,6 @@
 
     function spawnMonster() {
         const prefix = monsterPrefixes[Math.floor(Math.random() * monsterPrefixes.length)];
-        let skill = Math.random() < 0.40 ? monsterSkills[Math.floor(Math.random() * monsterSkills.length)] : null;
 
         const isBossStage = stage % 5 === 0;
         const base = randomMonsterPool[Math.floor(Math.random() * randomMonsterPool.length)];
@@ -805,7 +959,7 @@
             expReward: Math.floor((30 + (stage * 12)) * (isElite ? 1.8 : 1.0)),
             goldReward: Math.floor((25 + (stage * 18)) * (isElite ? 2.0 : 1.0)),
             isElite: isElite,
-            lootName: `${base.name}의 파편`, lootVal: Math.floor(base.val * (isElite ? 2.0 : 1.0)), skill: skill, isBoss: isBossStage
+            lootName: `${base.name}의 파편`, lootVal: Math.floor(base.val * (isElite ? 2.0 : 1.0)), isBoss: isBossStage
         };
     }
 
@@ -830,7 +984,7 @@
                 player.mp -= randSkill.costMp;
                 const skMult = randSkill.mult + (randSkill.level * 0.4);
                 skillBonusDmg = skMult;
-                log(`✨ <span style="color:#f1c40f;"><strong>[스킬 발동]</strong> ${randSkill.name}!</span> (데미지 ${skMult.toFixed(1)}배)`);
+                log(`✨ <span style="color:#f1c40f;"><strong>[스킬]</strong> ${randSkill.name}!</span> (데미지 ${skMult.toFixed(1)}배)`);
             }
         }
 
@@ -847,7 +1001,7 @@
                 if (bSkill.buffCritPercent) buffObj.buffCritPercent = bSkill.buffCritPercent + valInc;
 
                 player.activeBuffs.push(buffObj);
-                log(`🛡️ <span style="color:#2ecc71;">[버프 시전]</span> **${bSkill.name}** 효과 적용!`);
+                log(`🛡️ <span style="color:#2ecc71;">[버프]</span> **${bSkill.name}** 적용!`);
             }
         });
 
@@ -880,15 +1034,14 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold}G 획득!`);
 
-            // [요구사항 1] 확률에 따른 룬 조각 드롭 로직
-            let dropChance = 0.08; // 일반 몬스터: 8%
-            if (currentMonster.isBoss) dropChance = 0.50; // 보스: 50%
-            else if (currentMonster.isElite) dropChance = 0.30; // 엘리트: 30%
+            let dropChance = 0.08;
+            if (currentMonster.isBoss) dropChance = 0.50;
+            else if (currentMonster.isElite) dropChance = 0.30;
 
             if (Math.random() < dropChance) {
                 const shardAmount = currentMonster.isBoss ? Math.floor(3 + Math.random() * 3) : 1;
                 player.shards += shardAmount;
-                log(`💎 <span style="color:#00ffff;"><strong>[희귀 드롭!]</strong></span> 룬 파편 +${shardAmount}개 획득!`);
+                log(`💎 <span style="color:#00ffff;"><strong>[드롭!]</strong></span> 룬 파편 +${shardAmount}개!`);
             }
 
             const lootName = currentMonster.lootName;
@@ -911,7 +1064,7 @@
         log(`💥 ${currentMonster.name}의 공격! ${mDamage} 피해! (남은 HP: ${Math.max(0, player.hp)})`);
 
         if (player.hp <= 0) {
-            log(`💀 쓰러졌습니다... 회복 후 재도전합니다.`);
+            log(`💀 쓰러졌습니다... HP/MP 회복 후 재도전합니다.`);
             player.hp = getTotalMaxHp();
             player.mp = getTotalMaxMp();
             currentMonster = null;
@@ -949,9 +1102,8 @@
             player.level++;
             player.exp -= player.maxExp;
             player.maxExp = Math.floor(player.maxExp * 1.5);
-            player.statPts += 5; // 레벨업 기본 AP 5 부여
+            player.statPts += 5;
             
-            // [요구사항 2] 10레벨 단위 하이퍼 스탯 포인트 지급
             let hyperMsg = "";
             if (player.level % 10 === 0) {
                 player.hyperPts += 1;
@@ -1017,10 +1169,11 @@
         player.gold -= sk.price;
         sk.learned = true;
         sk.level = 1;
-        log(`📜 <span style="color:#2ecc71;">[스킬 습득]</span> **${sk.name}** 스킬을 배웠습니다!`);
+        log(`📜 <span style="color:#2ecc71;">[스킬 습득]</span> **${sk.name}** 습득!`);
         updateUI();
     }
 
+    // 초기 화면 동기화
     updateUI();
 </script>
 </body>
