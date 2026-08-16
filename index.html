@@ -378,7 +378,7 @@
                     💎 귀걸이: <span id="p-earring" class="item-hover" onclick="showTooltip(event, player.earring)">없음</span>
                 </div>
                 
-                <!-- 포션 보유 현황 및 자동 사용 설정 UI (요청 7 반영: 각각 갯수 표시) -->
+                <!-- 포션 보유 현황 및 자동 사용 설정 UI -->
                 <div style="margin-top: 8px; background: #151515; border: 1px solid #333; padding: 8px; border-radius: 8px;">
                     <h3 style="color:#f1c40f; margin-bottom: 6px; font-size:0.85rem;">❤️ 포션 자동 사용 설정</h3>
                     <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
@@ -532,7 +532,7 @@
             <div class="card">
                 <h2>🏰 상점 & 스킬 센터</h2>
                 
-                <!-- 쿠폰 입력 센터 UI (요청 5 반영: 쿠폰 코드 삭제 및 정리) -->
+                <!-- 쿠폰 입력 센터 UI (요청 5 반영: 쿠폰 코드 정리 완료) -->
                 <div style="background:#151515; border:1px solid #333; padding:10px; border-radius:8px; margin-bottom:12px;">
                     <h3 style="color:#f1c40f; margin-bottom:4px;">🎁 쿠폰 입력 센터</h3>
                     <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">쿠폰 코드를 입력하면 재화를 얻을 수 있습니다.</p>
@@ -632,7 +632,6 @@
                     </div>
                 </div>
 
-                <!-- 요청 3 반영: 귀걸이 등급업 확률 & 실패 패널티 가이드 출력 영역 -->
                 <div style="margin-top: 14px; border-top: 1px solid #333; padding-top: 10px;">
                     <h3 style="color:#f1c40f;">💎 귀걸이 등급업 확률 & 실패 패널티 가이드</h3>
                     <div class="rarity-guide-grid" id="earring-guide-grid"></div>
@@ -842,14 +841,14 @@
     ];
 
     const runeTierStats = [
-        { min: 0.03, max: 0.08 },  // 일반
-        { min: 0.08, max: 0.15 },  // 고급
-        { min: 0.15, max: 0.25 },  // 희귀
-        { min: 0.25, max: 0.40 },  // 영웅
-        { min: 0.40, max: 0.60 },  // 전설
-        { min: 0.60, max: 0.90 },  // 신화
-        { min: 0.90, max: 1.30 },  // 초월
-        { min: 1.30, max: 2.00 }   // 신성
+        { min: 0.03, max: 0.08 },
+        { min: 0.08, max: 0.15 },
+        { min: 0.15, max: 0.25 },
+        { min: 0.25, max: 0.40 },
+        { min: 0.40, max: 0.60 },
+        { min: 0.60, max: 0.90 },
+        { min: 0.90, max: 1.30 },
+        { min: 1.30, max: 2.00 }
     ];
 
     // 요청 1 반영: 각 스킬별 maxLevel 한계 지정
@@ -1126,13 +1125,98 @@
             return;
         }
 
-        if (player.usedCoupons.includes(code)) {
-            showCustomModal("이미 사용했거나 존재하지 않는 쿠폰 코드입니다.");
+        showCustomModal("존재하지 않거나 올바르지 않은 쿠폰 코드입니다.");
+        inputElem.value = "";
+    }
+
+    // 요청 2 반영: 보조옵션 각각 설정 모달 열기 (전후 수치 함께 표시)
+    function openSubOptionModal(slot) {
+        currentSubOptionSlot = slot;
+        const item = player[slot];
+        if (!item) {
+            showCustomModal("해당 슬롯에 장착된 장비가 없습니다.");
             return;
         }
 
-        showCustomModal("존재하지 않거나 올바르지 않은 쿠폰 코드입니다.");
-        inputElem.value = "";
+        const modal = document.getElementById("suboption-setting-modal");
+        const container = document.getElementById("sopt-list-container");
+        document.getElementById("sopt-modal-title").innerText = `🛠️ [${item.name}] 보조옵션 각각 설정`;
+
+        if (!item.effects || item.effects.length === 0) {
+            container.innerHTML = `<div style="text-align:center; color:#777; padding:10px;">변경 가능한 보조옵션이 없습니다.</div>`;
+            modal.style.display = "block";
+            return;
+        }
+
+        let html = "";
+        item.effects.forEach((eff, idx) => {
+            const isEarring = slot === 'earring';
+            const pool = isEarring ? earringOptionsPool : specialEffectsPool;
+            
+            html += `<div style="background:#222; padding:8px; border-radius:6px; border:1px solid #444; font-size:0.8rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span style="color:#f1c40f; font-weight:bold;">옵션 ${idx + 1}: ${eff.name}</span>
+                    <span style="color:#2ecc71; font-size:0.75rem;">현재 수치: ${eff.val || eff.chance || 0}</span>
+                </div>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    <select id="sopt-select-${idx}" style="flex:1; background:#111; color:#fff; border:1px solid #444; padding:4px; font-size:0.75rem; border-radius:4px;">`;
+            
+            pool.forEach(opt => {
+                const selected = opt.id === eff.id ? "selected" : "";
+                html += `<option value="${opt.id}" ${selected}>${opt.name}</option>`;
+            });
+
+            html += `</select>
+                    <button onclick="applySubOptionChange(${idx})" style="padding:4px 8px; font-size:0.75rem; background:#27ae60; min-height:28px;">변경</button>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+        modal.style.display = "block";
+    }
+
+    function applySubOptionChange(effIdx) {
+        const slot = currentSubOptionSlot;
+        const item = player[slot];
+        if (!item || !item.effects || !item.effects[effIdx]) return;
+
+        const selectElem = document.getElementById(`sopt-select-${effIdx}`);
+        if (!selectElem) return;
+
+        const newOptId = selectElem.value;
+        const isEarring = slot === 'earring';
+        const pool = isEarring ? earringOptionsPool : specialEffectsPool;
+        const optDef = pool.find(o => o.id === newOptId);
+
+        if (!optDef) return;
+
+        const oldVal = item.effects[effIdx].val || item.effects[effIdx].chance || 0;
+        let newVal = 0;
+        if (isEarring) {
+            newVal = Math.floor(Math.random() * (optDef.maxVal - optDef.minVal + 1)) + optDef.minVal;
+            item.effects[effIdx] = { id: optDef.id, name: optDef.name, val: newVal, desc: optDef.desc.replace("{val}", newVal) };
+        } else {
+            const tierIdx = itemData.rarities.findIndex(r => r.name === item.rarity);
+            const tierStat = optDef.tierStats[Math.max(0, tierIdx)] || optDef.tierStats[0];
+            const chanceVal = Math.floor(Math.random() * (tierStat.maxC - tierStat.minC + 1)) + tierStat.minC;
+            const statVal = tierStat.minV !== undefined ? Math.floor(Math.random() * (tierStat.maxV - tierStat.minV + 1)) + tierStat.minV : 0;
+            
+            item.effects[effIdx] = {
+                id: optDef.id, name: optDef.name, type: optDef.type,
+                chance: chanceVal, val: statVal, desc: optDef.desc
+            };
+        }
+
+        const updatedVal = item.effects[effIdx].val || item.effects[effIdx].chance || 0;
+        log(`🛠️ <span style="color:#3498db;">[옵션 개별설정]</span> 옵션 수치가 변경되었습니다! (변경 전: ${oldVal} ➡️ 변경 후: ${updatedVal})`);
+        updateUI();
+        saveGame();
+        openSubOptionModal(slot);
+    }
+
+    function hideSubOptionModal() {
+        document.getElementById("suboption-setting-modal").style.display = "none";
     }
 
     function setBattleSpeed(speed) {
@@ -1599,23 +1683,99 @@
         if (player.maxDmg < finalDmg) player.maxDmg = finalDmg;
 
         let critTag = isCrit ? ` <span style="color:#e74c3c; font-weight:bold;">[크리티컬!]</span>` : "";
-        let doubleTag = doubleAtkTriggered ? ` <span style="color:#f1c40f;">[더블어택!]</span>` : "";
-        let killTag = isInstantKill ? ` <span style="color:#9b59b6; font-weight:bold;">[즉사 발동!]</span>` : "";
-        let skillTagText = usedSkill ? ` (${usedSkill.name})` : "";
+        let doubleTag = doubleAtkTriggered ? ` <span style="color:#9b59b6; font-weight:bold;">[더블어택!]</span>` : "";
+        let skillTag = usedSkill ? ` <span style="color:#f39c12;">(${usedSkill.name})</span>` : "";
 
-        log(`⚔️ 용사의 공격${skillTagText}! <span style="color:#f1c40f;">${currentMonster.name}</span>에게 <strong>${finalDmg.toLocaleString()}</strong> 데미지${critTag}${doubleTag}${killTag}`);
+        log(`⚔️ 용사의 공격! <span style="color:#f1c40f;">${currentMonster.name}</span>에게 ${finalDmg.toLocaleString()} 피해!${critTag}${doubleTag}${skillTag}`);
 
         if (currentMonster.hp <= 0) {
-            handleMonsterVictory();
+            log(`🎉 <span style="color:#2ecc71;">${currentMonster.name}</span>을(를) 처치했습니다!`);
+            
+            let goldReward = currentMonster.val * (1 + getTotalGoldBonus() / 100);
+            let expReward = Math.floor(15 * Math.pow(stage, 1.2));
+            
+            let doubleRewardChance = getStatFromSkills('doubleRewardChance') * 100;
+            if (Math.random() * 100 < doubleRewardChance) {
+                goldReward *= 2;
+                expReward *= 2;
+                log(`🍀 <span style="color:#f1c40f;">[풍요의 축복]</span> 보상이 2배로 지급되었습니다!`);
+            }
+
+            player.gold += Math.floor(goldReward);
+            player.exp += expReward;
+
+            // 전리품 획득 로직 (요청 6 반영: 전리품 가격 포함)
+            if (Math.random() < 0.7) {
+                if (!player.inventory[currentMonster.loot]) {
+                    player.inventory[currentMonster.loot] = { count: 1, val: currentMonster.val };
+                } else {
+                    player.inventory[currentMonster.loot].count++;
+                }
+                log(`📦 전리품 <span style="color:#3498db;">[${currentMonster.loot}]</span>을(를) 획득했습니다! (가치: ${currentMonster.val}G)`);
+            }
+
+            // 확률적 재화 드랍
+            if (Math.random() * 100 < parseFloat(getCubeDropRate())) {
+                player.cubes++;
+                log(`🧊 <span style="color:#00ffff;">[큐브 드랍!]</span> 차원의 큐브 1개를 획득했습니다!`);
+            }
+            if (Math.random() * 100 < parseFloat(getShardDropRate())) {
+                let shardAmt = Math.floor(1 + getStatFromSkills('shardAmountBonus'));
+                player.shards += shardAmt;
+                log(`💎 <span style="color:#9b59b6; font-weight:bold;">[룬 파편 드랍!]</span> 룬 파편 +${shardAmt}개 획득!`);
+            }
+
+            // 레벨업 체크
+            if (player.exp >= player.maxExp) {
+                player.level++;
+                player.exp -= player.maxExp;
+                player.maxExp = Math.floor(player.maxExp * 1.35);
+                player.statPts += 5;
+                player.hyperPts += 1;
+                player.hp = getTotalMaxHp();
+                player.mp = getTotalMaxMp();
+                log(`⭐ <span style="color:#f1c40f; font-weight:bold;">레벨 업! (Lv.${player.level})</span> 능력치 포인트 +5, 하이퍼 포인트 +1`);
+            }
+
+            if (stage === maxStage) {
+                maxStage++;
+                if (maxStage > 100) maxStage = 100;
+            }
+
+            if (!player.repeatStage) {
+                stage++;
+                if (stage > 100) stage = 100;
+            }
+
+            currentMonster = null;
         } else {
-            let monsterAtk = currentMonster.atk;
+            // 몬스터 반격
+            let monsterDmg = currentMonster.atk;
             if (Math.random() * 100 < parseFloat(getEvasionRate())) {
-                log(`💨 <span style="color:#3498db;">[회피 성공]</span> 몬스터의 공격을 회피했습니다!`);
+                log(`💨 <span style="color:#3498db;">[회피 성공!]</span> 용사가 ${currentMonster.name}의 공격을 회피했습니다!`);
             } else {
-                player.hp -= monsterAtk;
-                log(`💥 <span style="color:#e74c3c;">${currentMonster.name}</span>의 반격! 용사가 <strong>${monsterAtk}</strong> 데미지를 입었습니다.`);
+                player.hp -= monsterDmg;
+                log(`💥 <span style="color:#e74c3c;">${currentMonster.name}</span>의 반격! 용사에게 ${monsterDmg} 피해! (HP: ${player.hp}/${maxHp})`);
+
                 if (player.hp <= 0) {
-                    handlePlayerDeath();
+                    log(`☠️ 용사가 전투에서 패배했습니다...`);
+                    player.hp = 0;
+                    clearInterval(battleInterval);
+                    isAutoBattling = false;
+                    document.getElementById("toggle-btn").innerText = "⚔️ 자동 전투 시작";
+                    document.getElementById("toggle-btn").style.background = "#2ecc71";
+
+                    let penalty = player.level * 100;
+                    player.gold = Math.max(0, player.gold - penalty);
+                    log(`💸 사망 패널티로 골드 -${penalty}G가 차감되었습니다.`);
+
+                    if (player.autoRestart) {
+                        setTimeout(() => {
+                            player.hp = getTotalMaxHp();
+                            player.mp = getTotalMaxMp();
+                            toggleAutoBattle();
+                        }, 1000);
+                    }
                 }
             }
         }
@@ -1624,120 +1784,11 @@
         saveGame();
     }
 
-    function handleMonsterVictory() {
-        log(`🎉 <span style="color:#2ecc71; font-weight:bold;">${currentMonster.name}</span>을(를) 처치했습니다!`);
-
-        let doubleChance = getStatFromSkills('doubleRewardChance');
-        let isDoubleReward = Math.random() < doubleChance;
-
-        let goldEarned = Math.floor(currentMonster.val * (1 + getTotalGoldBonus() / 100));
-        let expEarned = Math.floor((15 + stage * 8) * (1 + getStatFromSkills('expBonus')));
-        let shardEarned = Math.floor(1 + getStatFromSkills('shardAmountBonus'));
-
-        if (isDoubleReward) {
-            goldEarned *= 2;
-            expEarned *= 2;
-            shardEarned *= 2;
-            log(`🍀 <span style="color:#f1c40f; font-weight:bold;">[풍요의 축복 발동!]</span> 보상이 2배로 지급되었습니다!`);
-        }
-
-        player.gold += goldEarned;
-        player.exp += expEarned;
-
-        log(`💰 골드 +${goldEarned.toLocaleString()}G | ⭐ 경험치 +${expEarned}`);
-
-        if (Math.random() * 100 < parseFloat(getShardDropRate())) {
-            player.shards += shardEarned;
-            log(`💎 <span style="color:#2ecc71;">[룬 파편 획득]</span> 룬 파편 +${shardEarned}개 획득!`);
-        }
-
-        if (Math.random() * 100 < parseFloat(getCubeDropRate())) {
-            player.cubes++;
-            log(`🧊 <span style="color:#00ffff; font-weight:bold;">[큐브 획득]</span> 차원의 큐브 +1개 획득!`);
-        }
-
-        if (Math.random() * 100 < 0.8) {
-            player.runeCubes++;
-            log(`🔮 <span style="color:#9b59b6; font-weight:bold;">[룬의 큐브 획득]</span> 룬의 큐브 +1개 획득!`);
-        }
-
-        if (Math.random() * 100 < 1.2) {
-            player.magicBooks++;
-            log(`📖 <span style="color:#e67e22; font-weight:bold;">[마법책 획득]</span> 마법책 +1권 획득!`);
-        }
-
-        if (Math.random() * 100 < 2.0) {
-            player.skillShards++;
-            log(`🧩 <span style="color:#e67e22; font-weight:bold;">[스킬 조각 획득]</span> 스킬 조각 +1개 획득!`);
-        }
-
-        if (Math.random() * 100 < 0.2) {
-            player.speedCoins++;
-            log(`⏩ <span style="color:#f39c12; font-weight:bold;">[배속 코인 획득]</span> 배속 코인 +1개 획득!`);
-        }
-
-        if (Math.random() * 100 < parseFloat(getLootDropRate())) {
-            const lootName = currentMonster.loot;
-            if (!player.inventory[lootName]) player.inventory[lootName] = { count: 0, val: Math.floor(currentMonster.val * 0.8) };
-            player.inventory[lootName].count++;
-            log(`📦 <span style="color:#f1c40f;">[전리품 수집]</span> ${lootName} (+1)`);
-        }
-
-        if (currentMonster.isBoss) {
-            player.specialCoins += 5;
-            log(`👑 <span style="color:#e74c3c; font-weight:bold;">[보스 처치 보상]</span> 특수 장비 코인 +5개 획득!`);
-        }
-
-        checkLevelUp();
-
-        if (stage === maxStage && !player.repeatStage) {
-            if (maxStage < 100) {
-                maxStage++;
-                stage = maxStage;
-                log(`🚀 <span style="color:#f1c40f; font-weight:bold;">STAGE ${maxStage}</span>로 진입합니다!`);
-            }
-        } else if (player.repeatStage) {
-            log(`🔁 반복 사냥 모드로 STAGE ${stage} 스테이지를 유지합니다.`);
-        }
-
-        currentMonster = null;
-    }
-
-    function checkLevelUp() {
-        while (player.exp >= player.maxExp) {
-            player.exp -= player.maxExp;
-            player.level++;
-            player.statPts += 5;
-            player.hyperPts++;
-            player.maxExp = Math.floor(player.maxExp * 1.35);
-
-            player.hp = getTotalMaxHp();
-            player.mp = getTotalMaxMp();
-
-            log(`⭐ <span style="color:#f1c40f; font-weight:bold;">레벨 업!</span> 용사가 Lv.${player.level}이 되었습니다! (AP +5, 하이퍼Pt +1)`);
-        }
-    }
-
-    function handlePlayerDeath() {
-        log(`☠️ 용사가 전투에서 사망했습니다...`);
-        const penalty = player.level * 100;
-        player.gold = Math.max(0, player.gold - penalty);
-        log(`💸 사망 패널티로 골드 -${penalty.toLocaleString()}G를 잃었습니다.`);
-
-        player.hp = getTotalMaxHp();
-        player.mp = getTotalMaxMp();
-        currentMonster = null;
-
-        if (isAutoBattling && !player.autoRestart) {
-            toggleAutoBattle();
-            log(`⏹️ 사망으로 인해 자동 전투가 중지되었습니다.`);
-        }
-    }
-
     function sellAllLoot() {
         let totalVal = 0;
-        for (let name in player.inventory) {
-            totalVal += player.inventory[name].count * player.inventory[name].val;
+        for (let key in player.inventory) {
+            let item = player.inventory[key];
+            totalVal += item.count * item.val;
         }
         if (totalVal <= 0) {
             showCustomModal("매각할 전리품이 없습니다.");
@@ -1745,150 +1796,27 @@
         }
         player.gold += totalVal;
         player.inventory = {};
-        log(`💰 <span style="color:#2ecc71;">[전리품 매각]</span> 모든 전리품을 판매하여 <strong>${totalVal.toLocaleString()}G</strong>를 획득했습니다.`);
+        log(`💰 <span style="color:#f1c40f;">[전리품 매각]</span> 모든 전리품을 판매하여 <strong>${totalVal.toLocaleString()}G</strong>를 획득했습니다.`);
         updateUI();
         saveGame();
     }
 
-    function upgradeRuneSocket() {
-        const rarities = itemData.rarities;
-        if (player.socketRarityIdx >= rarities.length - 1) {
-            showCustomModal("이미 최고 등급(신성) 소켓에 도달했습니다!");
-            return;
-        }
-        const currentRarity = rarities[player.socketRarityIdx];
-        const cost = currentRarity.upgradeShardCost;
-
-        if (player.shards < cost) {
-            showCustomModal(`룬 파편이 부족합니다! (필요: ${cost}개)`);
-            return;
-        }
-
-        player.shards -= cost;
-        const successChance = currentRarity.upgradeChance;
-
-        if (Math.random() * 100 < successChance) {
-            player.socketRarityIdx++;
-            const newRarity = rarities[player.socketRarityIdx];
-            log(`✨ <span style="color:#2ecc71; font-weight:bold;">[소켓 등급업 성공!]</span> 룬 소켓이 [${newRarity.name}] 등급으로 승급했습니다!`);
-            showCustomModal(`🎉 룬 소켓 등급업 성공! [${newRarity.name}] 등급 달성!`);
-        } else {
-            log(`❌ <span style="color:#e74c3c;">[소켓 등급업 실패]</span> 아쉽게도 승급에 실패했습니다.`);
-            showCustomModal("아쉽게도 소켓 등급업에 실패했습니다...");
-        }
-        updateUI();
-        saveGame();
-    }
-
-    function expandRuneBag() {
-        const cost = 500 + (player.runeBagCap - 10) * 200;
-        if (player.gold < cost) {
-            showCustomModal(`골드가 부족합니다! (필요: ${cost.toLocaleString()}G)`);
-            return;
-        }
-        player.gold -= cost;
-        player.runeBagCap += 5;
-        log(`🎒 <span style="color:#2ecc71;">[가방 확장]</span> 룬 가방 용량이 ${player.runeBagCap}칸으로 확장되었습니다.`);
-        updateUI();
-        saveGame();
-    }
-
-    function buyRune() {
-        const cost = 50;
-        if (player.shards < cost) {
-            showCustomModal(`룬 파편이 부족합니다! (필요: ${cost}개)`);
-            return;
-        }
-        if (player.runeBag.length >= player.runeBagCap) {
-            showCustomModal("룬 가방이 가득 찼습니다! 가방을 확장해주세요.");
-            return;
-        }
-
-        player.shards -= cost;
-        const randType = runeTypes[Math.floor(Math.random() * runeTypes.length)];
-        const randTierIdx = Math.floor(Math.random() * itemData.rarities.length);
-        const tierObj = itemData.rarities[randTierIdx];
-        const statRange = runeTierStats[randTierIdx];
-        const statVal = parseFloat((Math.random() * (statRange.max - statRange.min) + statRange.min).toFixed(3));
-
-        const newRune = {
-            id: Math.random().toString(36).substring(2, 9),
-            name: randType.name,
-            stat: randType.stat,
-            unit: randType.unit,
-            rarity: tierObj.name,
-            val: statVal
-        };
-
-        player.runeBag.push(newRune);
-        log(`🔮 <span style="color:#9b59b6;">[룬 뽑기]</span> [${tierObj.name}] ${randType.name} 룬을 획득했습니다!`);
-        updateUI();
-        saveGame();
-    }
-
-    function equipRune(bagIdx) {
-        const rune = player.runeBag[bagIdx];
-        const maxSlots = itemData.rarities[player.socketRarityIdx].maxRuneSlots;
-        if (player.equippedRunes.length >= maxSlots) {
-            showCustomModal("현재 소켓에 장착할 수 있는 최대 룬 개수를 초과했습니다!");
-            return;
-        }
-        player.runeBag.splice(bagIdx, 1);
-        player.equippedRunes.push(rune);
-        log(`🛡️ 룬 장착 완료: [${rune.rarity}] ${rune.name}`);
-        updateUI();
-        saveGame();
-    }
-
-    function unequipRune(equippedIdx) {
-        if (player.runeBag.length >= player.runeBagCap) {
-            showCustomModal("룬 가방이 가득 찼습니다!");
-            return;
-        }
-        const rune = player.equippedRunes.splice(equippedIdx, 1)[0];
-        player.runeBag.push(rune);
-        log(`🛡️ 룬 해제 완료: [${rune.rarity}] ${rune.name}`);
-        updateUI();
-        saveGame();
-    }
-
-    function rerollRune(bagIdx) {
-        const rune = player.runeBag[bagIdx];
-        const rarityObj = itemData.rarities.find(r => r.name === rune.rarity) || itemData.rarities[0];
-        const cost = rarityObj.runeCubeCost;
-
-        if (player.runeCubes < cost) {
-            showCustomModal(`룬의 큐브가 부족합니다! (필요: ${cost}개)`);
-            return;
-        }
-
-        player.runeCubes -= cost;
-        const tierIdx = itemData.rarities.findIndex(r => r.name === rune.rarity);
-        const statRange = runeTierStats[tierIdx >= 0 ? tierIdx : 0];
-        const statVal = parseFloat((Math.random() * (statRange.max - statRange.min) + statRange.min).toFixed(3));
-        rune.val = statVal;
-
-        log(`🔮 <span style="color:#9b59b6;">[룬의 큐브]</span> [${rune.rarity}] ${rune.name} 룬의 수치가 재설정되었습니다!`);
-        updateUI();
-        saveGame();
-    }
-
-    // 요청 4 반영: 스테이지 증가에 따른 장비 뽑기 가격과 능력치 상승 오류 수정
-    function buyRandomItem(type) {
-        const baseCost = 150;
-        const cost = Math.floor(baseCost * Math.pow(1.15, stage - 1));
+    function buyRandomItem(slot) {
+        // 요청 3 반영: 스테이지에 따른 장비 뽑기 가격 밸런스 완화 조절
+        let cost = Math.floor(150 * Math.pow(stage, 1.15));
+        if (slot === 'armor') cost = Math.floor(150 * Math.pow(stage, 1.15));
+        if (slot === 'subWeapon') cost = Math.floor(150 * Math.pow(stage, 1.15));
 
         if (player.gold < cost) {
-            showCustomModal(`골드가 부족합니다! (필요: ${cost.toLocaleString()}G)`);
+            showCustomModal(`골드가 부족합니다! (필요 골드: ${cost.toLocaleString()}G)`);
             return;
         }
 
         player.gold -= cost;
 
-        const rand = Math.random();
+        let rand = Math.random();
         let cumulative = 0;
         let chosenRarity = itemData.rarities[0];
-
         for (let r of itemData.rarities) {
             cumulative += r.chance;
             if (rand <= cumulative) {
@@ -1897,330 +1825,303 @@
             }
         }
 
-        const prefix = itemData.prefixes[Math.floor(Math.random() * itemData.prefixes.length)];
-        const suffix = itemData.suffixes[Math.floor(Math.random() * itemData.suffixes.length)];
-        let name = "", desc = "";
-        let statVal = 0;
+        let baseName = "";
+        let prefix = itemData.prefixes[Math.floor(Math.random() * itemData.prefixes.length)];
+        let suffix = itemData.suffixes[Math.floor(Math.random() * itemData.suffixes.length)];
+        let itemName = `${prefix} ${suffix}`;
 
-        if (type === 'weapon') {
-            const baseW = itemData.weaponBases[Math.floor(Math.random() * itemData.weaponBases.length)];
-            name = `${prefix} ${baseW} of ${suffix}`;
-            statVal = Math.floor((10 + stage * 5) * chosenRarity.mult);
-            desc = `스테이지 ${stage}에서 제작된 강력한 무기`;
-        } else if (type === 'armor') {
-            const baseA = itemData.armorBases[Math.floor(Math.random() * itemData.armorBases.length)];
-            name = `${prefix} ${baseA} of ${suffix}`;
-            statVal = Math.floor((20 + stage * 10) * chosenRarity.mult);
-            desc = `스테이지 ${stage}에서 제작된 튼튼한 방어구`;
-        } else if (type === 'subWeapon') {
-            const baseS = itemData.subWeaponBases[Math.floor(Math.random() * itemData.subWeaponBases.length)];
-            name = `${prefix} ${baseS} of ${suffix}`;
-            statVal = Math.floor((5 + stage * 3) * chosenRarity.mult);
-            desc = `스테이지 ${stage}에서 발견된 보조장비`;
+        if (slot === 'weapon') {
+            baseName = itemData.weaponBases[Math.floor(Math.random() * itemData.weaponBases.length)];
+            itemName = `${prefix}의 ${baseName}`;
+        } else if (slot === 'armor') {
+            baseName = itemData.armorBases[Math.floor(Math.random() * itemData.armorBases.length)];
+            itemName = `${prefix} ${baseName}`;
+        } else {
+            baseName = itemData.subWeaponBases[Math.floor(Math.random() * itemData.subWeaponBases.length)];
+            itemName = `${prefix} ${baseName}`;
         }
 
-        const newItem = {
-            type: type,
-            name: name,
-            rarity: chosenRarity.name,
-            color: chosenRarity.color,
-            effects: generateItemEffects(chosenRarity.effectCount, chosenRarity.name),
-            desc: desc
+        let effects = [];
+        for (let i = 0; i < chosenRarity.effectCount; i++) {
+            let effDef = specialEffectsPool[Math.floor(Math.random() * specialEffectsPool.length)];
+            let tierIdx = itemData.rarities.findIndex(r => r.name === chosenRarity.name);
+            let tierStat = effDef.tierStats[Math.max(0, tierIdx)] || effDef.tierStats[0];
+            let chanceVal = Math.floor(Math.random() * (tierStat.maxC - tierStat.minC + 1)) + tierStat.minC;
+            let statVal = tierStat.minV !== undefined ? Math.floor(Math.random() * (tierStat.maxV - tierStat.minV + 1)) + tierStat.minV : 0;
+
+            effects.push({
+                id: effDef.id, name: effDef.name, type: effDef.type,
+                chance: chanceVal, val: statVal, desc: effDef.desc
+            });
+        }
+
+        let newItem = {
+            type: slot, name: itemName, rarity: chosenRarity.name, color: chosenRarity.color,
+            effects: effects, desc: `스테이지 ${stage}에서 발견된 장비`
         };
 
-        if (type === 'armor') newItem.hp = statVal;
-        else newItem.atk = statVal;
+        if (slot === 'weapon') {
+            newItem.atk = Math.floor((10 + stage * 5) * chosenRarity.mult);
+        } else if (slot === 'armor') {
+            newItem.hp = Math.floor((25 + stage * 10) * chosenRarity.mult);
+        } else {
+            newItem.atk = Math.floor((5 + stage * 3) * chosenRarity.mult);
+        }
 
-        player[type] = newItem;
-        log(`🎁 <span style="color:#2ecc71;">[장비 획득]</span> [${chosenRarity.name}] ${name}을(를) 획득하여 장착했습니다!`);
+        player[slot] = newItem;
+        log(`🎁 <span style="color:#f1c40f;">[장비 획득]</span> [${chosenRarity.name}] ${itemName}을(를) 획득하여 자동 장착했습니다!`);
         updateUI();
         saveGame();
     }
 
     function buyRandomEarring() {
-        const cost = 10;
+        let cost = 10;
         if (player.specialCoins < cost) {
             showCustomModal(`특수 장비 코인이 부족합니다! (필요: ${cost}개)`);
             return;
         }
+
         player.specialCoins -= cost;
-
-        const rarities = itemData.earringRarities;
-        const rand = Math.random();
-        let cumulative = 0;
-        let chosenRarity = rarities[0];
-
-        for (let r of rarities) {
-            cumulative += r.chance;
-            if (rand <= cumulative) {
-                chosenRarity = r;
-                break;
-            }
+        let chosenR = itemData.earringRarities[0];
+        let rand = Math.random();
+        let cum = 0;
+        for (let r of itemData.earringRarities) {
+            cum += r.chance;
+            if (rand <= cum) { chosenR = r; break; }
         }
 
-        const baseE = itemData.earringBases[Math.floor(Math.random() * itemData.earringBases.length)];
-        const name = `신비로운 ${baseE}`;
+        let bName = itemData.earringBases[Math.floor(Math.random() * itemData.earringBases.length)];
+        let effects = [];
+        for (let i = 0; i < chosenR.effectCount; i++) {
+            let opt = earringOptionsPool[Math.floor(Math.random() * earringOptionsPool.length)];
+            let val = Math.floor(Math.random() * (opt.maxVal - opt.minVal + 1)) + opt.minVal;
+            effects.push({ id: opt.id, name: opt.name, val: val, desc: opt.desc.replace("{val}", val) });
+        }
 
-        const newItem = {
-            type: 'earring',
-            name: name,
-            rarity: chosenRarity.name,
-            color: chosenRarity.color,
-            effects: generateEarringEffects(chosenRarity.effectCount),
-            desc: "강력한 특수 효과가 부여된 귀걸이"
+        player.earring = {
+            type: "earring", name: bName, rarity: chosenR.name, color: chosenR.color,
+            effects: effects, desc: "빛나는 신비한 특수 귀걸이"
         };
 
-        player.earring = newItem;
-        log(`💎 <span style="color:#e74c3c; font-weight:bold;">[특수 귀걸이 획득]</span> [${chosenRarity.name}] ${name}을(를) 장착했습니다!`);
-        updateUI();
-        saveGame();
-    }
-
-    function generateItemEffects(count, rarityName) {
-        let effects = [];
-        let pool = [...specialEffectsPool];
-        for (let i = 0; i < count; i++) {
-            if (pool.length === 0) break;
-            const idx = Math.floor(Math.random() * pool.length);
-            const effDef = pool.splice(idx, 1)[0];
-
-            const tierIdx = itemData.rarities.findIndex(r => r.name === rarityName);
-            const tStat = effDef.tierStats[tierIdx >= 0 ? tierIdx : 0];
-
-            let chanceVal = Math.floor(Math.random() * (tStat.maxC - tStat.minC + 1)) + tStat.minC;
-            let valVal = tStat.minV !== undefined ? Math.floor(Math.random() * (tStat.maxV - tStat.minV + 1)) + tStat.minV : 0;
-
-            effects.push({
-                id: effDef.id,
-                name: effDef.name,
-                chance: chanceVal,
-                val: valVal,
-                desc: effDef.desc
-            });
-        }
-        return effects;
-    }
-
-    function generateEarringEffects(count) {
-        let effects = [];
-        let pool = [...earringOptionsPool];
-        for (let i = 0; i < count; i++) {
-            if (pool.length === 0) break;
-            const idx = Math.floor(Math.random() * pool.length);
-            const opt = pool.splice(idx, 1)[0];
-            const val = Math.floor(Math.random() * (opt.maxVal - opt.minVal + 1)) + opt.minVal;
-
-            effects.push({
-                id: opt.id,
-                name: opt.name,
-                val: val,
-                desc: opt.desc
-            });
-        }
-        return effects;
-    }
-
-    function rerollOption(slot) {
-        const item = player[slot];
-        if (!item) {
-            showCustomModal("장착 중인 장비가 없습니다.");
-            return;
-        }
-
-        if (slot === 'earring') {
-            const rarityObj = itemData.earringRarities.find(r => r.name === item.rarity) || itemData.earringRarities[0];
-            const cost = rarityObj.magicBookCost;
-            if (player.magicBooks < cost) {
-                showCustomModal(`마법책이 부족합니다! (필요: ${cost}권)`);
-                return;
-            }
-            player.magicBooks -= cost;
-            item.effects = generateEarringEffects(rarityObj.effectCount);
-            log(`📖 <span style="color:#e67e22;">[귀걸이 옵션 변경]</span> 마법책 ${cost}권을 소모하여 옵션을 재설정했습니다.`);
-        } else {
-            const rarityObj = itemData.rarities.find(r => r.name === item.rarity) || itemData.rarities[0];
-            const cost = rarityObj.cubeCost;
-            if (player.cubes < cost) {
-                showCustomModal(`큐브가 부족합니다! (필요: ${cost}개)`);
-                return;
-            }
-            player.cubes -= cost;
-            item.effects = generateItemEffects(rarityObj.effectCount, rarityObj.name);
-            log(`🧊 <span style="color:#00ffff;">[옵션 변경]</span> 큐브 ${cost}개를 소모하여 [${item.name}] 옵션을 재설정했습니다.`);
-        }
-
-        updateUI();
-        saveGame();
-    }
-
-    // 요청 2 반영: 개별 보조옵션 각각 설정 모달 및 전/후 수치 표시 기능 추가
-    function openSubOptionModal(slot) {
-        const item = player[slot];
-        if (!item || !item.effects || item.effects.length === 0) {
-            showCustomModal("설정할 보조옵션이 없는 장비입니다.");
-            return;
-        }
-
-        currentSubOptionSlot = slot;
-        const modal = document.getElementById("suboption-setting-modal");
-        const container = document.getElementById("sopt-list-container");
-        container.innerHTML = "";
-
-        item.effects.forEach((eff, idx) => {
-            let row = document.createElement("div");
-            row.style.background = "#222";
-            row.style.padding = "6px 8px";
-            row.style.borderRadius = "6px";
-            row.style.border = "1px solid #444";
-            row.style.display = "flex";
-            row.style.flexDirection = "column";
-            row.style.gap = "4px";
-
-            let titleDiv = document.createElement("div");
-            titleDiv.style.display = "flex";
-            titleDiv.style.justifyContent = "space-between";
-            titleDiv.style.fontSize = "0.8rem";
-            titleDiv.innerHTML = `<span><strong>[옵션 ${idx + 1}]</strong> ${eff.name}</span><span style="color:#2ecc71;">현재: ${eff.val !== undefined ? eff.val : eff.chance}%</span>`;
-
-            let btnDiv = document.createElement("div");
-            btnDiv.style.display = "flex";
-            btnDiv.style.justifyContent = "flex-end";
-            btnDiv.style.gap = "4px";
-
-            let rerollBtn = document.createElement("button");
-            rerollBtn.innerText = "🎲 이 옵션만 개별 변경";
-            rerollBtn.style.padding = "2px 6px";
-            rerollBtn.style.fontSize = "0.7rem";
-            rerollBtn.style.background = "#2980b9";
-            rerollBtn.onclick = function() {
-                rerollSingleSubOption(slot, idx);
-            };
-
-            btnDiv.appendChild(rerollBtn);
-            row.appendChild(titleDiv);
-            row.appendChild(btnDiv);
-            container.appendChild(row);
-        });
-
-        modal.style.display = "block";
-    }
-
-    function hideSubOptionModal() {
-        document.getElementById("suboption-setting-modal").style.display = "none";
-        currentSubOptionSlot = null;
-    }
-
-    function rerollSingleSubOption(slot, effectIdx) {
-        const item = player[slot];
-        if (!item || !item.effects[effectIdx]) return;
-
-        let cost = 1;
-        let isEarring = (slot === 'earring');
-        
-        if (isEarring) {
-            if (player.magicBooks < 1) {
-                showCustomModal("마법책이 부족합니다! (개별 변경 비용: 마법책 1권)");
-                return;
-            }
-            player.magicBooks -= 1;
-        } else {
-            if (player.cubes < 1) {
-                showCustomModal("큐브가 부족합니다! (개별 변경 비용: 큐브 1개)");
-                return;
-            }
-            player.cubes -= 1;
-        }
-
-        const oldEff = item.effects[effectIdx];
-        let oldValText = oldEff.val !== undefined ? `${oldEff.val}%` : `${oldEff.chance}%`;
-
-        if (isEarring) {
-            const optPool = earringOptionsPool;
-            const newOpt = optPool[Math.floor(Math.random() * optPool.length)];
-            const newVal = Math.floor(Math.random() * (newOpt.maxVal - newOpt.minVal + 1)) + newOpt.minVal;
-            item.effects[effectIdx] = {
-                id: newOpt.id,
-                name: newOpt.name,
-                val: newVal,
-                desc: newOpt.desc
-            };
-        } else {
-            const pool = specialEffectsPool;
-            const effDef = pool[Math.floor(Math.random() * pool.length)];
-            const tierIdx = itemData.rarities.findIndex(r => r.name === item.rarity);
-            const tStat = effDef.tierStats[tierIdx >= 0 ? tierIdx : 0];
-            let chanceVal = Math.floor(Math.random() * (tStat.maxC - tStat.minC + 1)) + tStat.minC;
-            let valVal = tStat.minV !== undefined ? Math.floor(Math.random() * (tStat.maxV - tStat.minV + 1)) + tStat.minV : 0;
-
-            item.effects[effectIdx] = {
-                id: effDef.id,
-                name: effDef.name,
-                chance: chanceVal,
-                val: valVal,
-                desc: effDef.desc
-            };
-        }
-
-        const newEff = item.effects[effectIdx];
-        let newValText = newEff.val !== undefined ? `${newEff.val}%` : `${newEff.chance}%`;
-
-        log(`🛠️ <span style="color:#3498db;">[보조옵션 각각 설정]</span> 옵션 ${effectIdx + 1} 변경 전후 수치 👉 전: ${oldValText} / 후: ${newValText}`);
-        showCustomModal(`🛠️ 보조옵션 변경 완료!\n전: ${oldValText} ➡️ 후: ${newValText}`);
-        
-        openSubOptionModal(slot);
+        log(`💎 <span style="color:#e74c3c;">[귀걸이 획득]</span> [${chosenR.name}] ${bName}을(를) 획득했습니다!`);
         updateUI();
         saveGame();
     }
 
     function upgradeEarringRarity() {
         if (!player.earring) {
-            showCustomModal("장착 중인 특수 귀걸이가 없습니다.");
+            showCustomModal("장착 중인 귀걸이가 없습니다.");
             return;
         }
-        const rarities = itemData.earringRarities;
-        const currentIdx = rarities.findIndex(r => r.name === player.earring.rarity);
-        if (currentIdx >= rarities.length - 1) {
+
+        const currRarityName = player.earring.rarity;
+        const rIndex = itemData.earringRarities.findIndex(r => r.name === currRarityName);
+        if (rIndex >= itemData.earringRarities.length - 1) {
             showCustomModal("이미 최고 등급(신성) 귀걸이입니다!");
             return;
         }
 
-        const currentRarity = rarities[currentIdx];
+        const rInfo = itemData.earringRarities[rIndex];
         const isProtected = document.getElementById("earring-protect-checkbox").checked;
-        const reqCoin = isProtected ? currentRarity.baseCoin * currentRarity.protectMult : currentRarity.baseCoin;
+        const cost = isProtected ? rInfo.baseCoin * rInfo.protectMult : rInfo.baseCoin;
 
-        if (player.specialCoins < reqCoin) {
-            showCustomModal(`특수 장비 코인이 부족합니다! (필요: ${reqCoin}개)`);
+        if (player.specialCoins < cost) {
+            showCustomModal(`특수 장비 코인이 부족합니다! (필요: ${cost}개)`);
             return;
         }
 
-        player.specialCoins -= reqCoin;
-        const successChance = currentRarity.upgradeChance * 100;
+        player.specialCoins -= cost;
+        const successChance = rInfo.upgradeChance * 100;
 
         if (Math.random() * 100 < successChance) {
-            const nextRarity = rarities[currentIdx + 1];
-            player.earring.rarity = nextRarity.name;
-            player.earring.color = nextRarity.color;
-            player.earring.effects = generateEarringEffects(nextRarity.effectCount);
-            log(`✨ <span style="color:#e74c3c; font-weight:bold;">[귀걸이 등급업 성공!]</span> [${nextRarity.name}] 등급으로 승급했습니다!`);
-            showCustomModal(`🎉 귀걸이 등급업 성공! [${nextRarity.name}] 등급 도달!`);
+            const nextR = itemData.earringRarities[rIndex + 1];
+            player.earring.rarity = nextR.name;
+            player.earring.color = nextR.color;
+            log(`🎉 <span style="color:#2ecc71;">[귀걸이 등급업 성공!]</span> [${nextR.name}] 등급으로 진화했습니다!`);
         } else {
             if (isProtected) {
-                log(`🛡️ <span style="color:#3498db;">[하락 방어 발동]</span> 귀걸이 등급업 실패했으나 방어권으로 등급이 유지되었습니다.`);
-                showCustomModal("등급업에 실패했지만 하락 방어가 발동하여 등급이 유지되었습니다.");
+                log(`🛡️ <span style="color:#3498db;">[귀걸이 방어 성공]</span> 등급업에 실패했으나 하락 방어권으로 등급이 유지되었습니다.`);
             } else {
-                if (currentIdx > 0 && Math.random() * 100 < (currentRarity.downgradeChance * 100)) {
-                    const prevRarity = rarities[currentIdx - 1];
-                    player.earring.rarity = prevRarity.name;
-                    player.earring.color = prevRarity.color;
-                    player.earring.effects = generateEarringEffects(prevRarity.effectCount);
-                    log(`💥 <span style="color:#e74c3c;">[귀걸이 등급 하락]</span> 등급업 실패 및 패널티로 [${prevRarity.name}] 등급으로 하락했습니다.`);
-                    showCustomModal(`❌ 등급업 실패... 패널티로 [${prevRarity.name}] 등급으로 하락했습니다.`);
+                if (Math.random() * 100 < rInfo.downgradeChance * 100 && rIndex > 0) {
+                    const prevR = itemData.earringRarities[rIndex - 1];
+                    player.earring.rarity = prevR.name;
+                    player.earring.color = prevR.color;
+                    log(`❌ <span style="color:#e74c3c;">[귀걸이 등급업 실패]</span> 실패하여 [${prevR.name}] 등급으로 하락했습니다.`);
                 } else {
-                    log(`❌ <span style="color:#e74c3c;">[귀걸이 등급업 실패]</span> 등급업에 실패했습니다 (등급 유지).`);
-                    showCustomModal("등급업에 실패했습니다.");
+                    log(`❌ <span style="color:#e74c3c;">[귀걸이 등급업 실패]</span> 등급이 유지되었습니다.`);
                 }
             }
         }
+        updateUI();
+        saveGame();
+    }
+
+    function rerollOption(slot) {
+        const item = player[slot];
+        if (!item) {
+            showCustomModal("해당 슬롯에 장비가 없습니다.");
+            return;
+        }
+
+        const rarityObj = itemData.rarities.find(r => r.name === item.rarity) || itemData.rarities[0];
+        const cost = slot === 'earring' ? rarityObj.magicBookCost : rarityObj.cubeCost;
+        const currencyName = slot === 'earring' ? "마법책" : "큐브";
+        const playerCurr = slot === 'earring' ? player.magicBooks : player.cubes;
+
+        if (playerCurr < cost) {
+            showCustomModal(`${currencyName}가 부족합니다! (필요: ${cost}개)`);
+            return;
+        }
+
+        if (slot === 'earring') player.magicBooks -= cost;
+        else player.cubes -= cost;
+
+        let effects = [];
+        const count = rarityObj.effectCount;
+        for (let i = 0; i < count; i++) {
+            if (slot === 'earring') {
+                let opt = earringOptionsPool[Math.floor(Math.random() * earringOptionsPool.length)];
+                let val = Math.floor(Math.random() * (opt.maxVal - opt.minVal + 1)) + opt.minVal;
+                effects.push({ id: opt.id, name: opt.name, val: val, desc: opt.desc.replace("{val}", val) });
+            } else {
+                let effDef = specialEffectsPool[Math.floor(Math.random() * specialEffectsPool.length)];
+                let tierIdx = itemData.rarities.findIndex(r => r.name === item.rarity);
+                let tierStat = effDef.tierStats[Math.max(0, tierIdx)] || effDef.tierStats[0];
+                let chanceVal = Math.floor(Math.random() * (tierStat.maxC - tierStat.minC + 1)) + tierStat.minC;
+                let statVal = tierStat.minV !== undefined ? Math.floor(Math.random() * (tierStat.maxV - tierStat.minV + 1)) + tierStat.minV : 0;
+                effects.push({ id: effDef.id, name: effDef.name, type: effDef.type, chance: chanceVal, val: statVal, desc: effDef.desc });
+            }
+        }
+
+        item.effects = effects;
+        log(`🧊 <span style="color:#00ffff;">[옵션 재설정]</span> [${item.name}]의 옵션이 갱신되었습니다.`);
+        updateUI();
+        saveGame();
+    }
+
+    function upgradeRuneSocket() {
+        if (player.socketRarityIdx >= itemData.rarities.length - 1) {
+            showCustomModal("소켓이 이미 최고 등급(신성)입니다!");
+            return;
+        }
+
+        const currR = itemData.rarities[player.socketRarityIdx];
+        if (player.shards < currR.upgradeShardCost) {
+            showCustomModal(`룬 파편이 부족합니다! (필요: ${currR.upgradeShardCost}개)`);
+            return;
+        }
+
+        player.shards -= currR.upgradeShardCost;
+        if (Math.random() * 100 < currR.upgradeChance) {
+            player.socketRarityIdx++;
+            const nextR = itemData.rarities[player.socketRarityIdx];
+            log(`🎉 <span style="color:#2ecc71;">[소켓 승급 성공!]</span> 룬 소켓이 [${nextR.name}] 등급으로 승급되었습니다!`);
+        } else {
+            log(`❌ <span style="color:#e74c3c;">[소켓 승급 실패]</span> 룬 파편이 소모되었습니다.`);
+        }
+        updateUI();
+        saveGame();
+    }
+
+    function expandRuneBag() {
+        let cost = 500 + (player.runeBagCap - 10) * 100;
+        if (player.gold < cost) {
+            showCustomModal(`골드가 부족합니다! (필요: ${cost}G)`);
+            return;
+        }
+        player.gold -= cost;
+        player.runeBagCap += 5;
+        log(`📦 <span style="color:#f1c40f;">[가방 확장]</span> 룬 가방 용량이 확장되었습니다. (최대 ${player.runeBagCap}개)`);
+        updateUI();
+        saveGame();
+    }
+
+    function buyRune() {
+        if (player.shards < 50) {
+            showCustomModal("룬 파편이 부족합니다! (필요: 50개)");
+            return;
+        }
+        if (player.runeBag.length >= player.runeBagCap) {
+            showCustomModal("룬 가방이 가득 찼습니다! 가방을 확장해주세요.");
+            return;
+        }
+
+        player.shards -= 50;
+        let rand = Math.random();
+        let cum = 0;
+        let chosenTierIdx = 0;
+        for (let i = 0; i < itemData.rarities.length; i++) {
+            cum += itemData.rarities[i].chance;
+            if (rand <= cum) { chosenTierIdx = i; break; }
+        }
+
+        let tierObj = itemData.rarities[chosenTierIdx];
+        let typeObj = runeTypes[Math.floor(Math.random() * runeTypes.length)];
+        let statRange = runeTierStats[chosenTierIdx];
+        let val = Math.random() * (statRange.max - statRange.min) + statRange.min;
+
+        let newRune = {
+            id: Date.now() + Math.random(),
+            name: typeObj.name,
+            stat: typeObj.stat,
+            unit: typeObj.unit,
+            val: parseFloat(val.toFixed(3)),
+            rarity: tierObj.name
+        };
+
+        player.runeBag.push(newRune);
+        log(`🎲 <span style="color:#9b59b6;">[룬 뽑기]</span> [${tierObj.name}] ${typeObj.name} 룬을 획득했습니다!`);
+        updateUI();
+        saveGame();
+    }
+
+    function equipRune(bagIdx) {
+        let rune = player.runeBag[bagIdx];
+        if (!rune) return;
+
+        let maxSlots = itemData.rarities[player.socketRarityIdx].maxRuneSlots;
+        if (player.equippedRunes.length >= maxSlots) {
+            showCustomModal(`장착 소켓이 부족합니다! (현재 소켓 최대 장착: ${maxSlots}개)`);
+            return;
+        }
+
+        player.runeBag.splice(bagIdx, 1);
+        player.equippedRunes.push(rune);
+        updateUI();
+        saveGame();
+    }
+
+    function unequipRune(eqIdx) {
+        let rune = player.equippedRunes[eqIdx];
+        if (!rune) return;
+
+        if (player.runeBag.length >= player.runeBagCap) {
+            showCustomModal("룬 가방이 가득 찼습니다!");
+            return;
+        }
+
+        player.equippedRunes.splice(eqIdx, 1);
+        player.runeBag.push(rune);
+        updateUI();
+        saveGame();
+    }
+
+    function rerollRuneVal(bagIdx) {
+        let rune = player.runeBag[bagIdx];
+        if (!rune) return;
+
+        if (player.runeCubes < 1) {
+            showCustomModal("룬의 큐브가 부족합니다!");
+            return;
+        }
+
+        player.runeCubes--;
+        let tierIdx = itemData.rarities.findIndex(r => r.name === rune.rarity);
+        let statRange = runeTierStats[Math.max(0, tierIdx)] || runeTierStats[0];
+        let val = Math.random() * (statRange.max - statRange.min) + statRange.min;
+        rune.val = parseFloat(val.toFixed(3));
+
+        log(`🔮 <span style="color:#9b59b6;">[룬의 큐브]</span> [${rune.rarity}] ${rune.name} 룬의 수치가 재설정되었습니다.`);
         updateUI();
         saveGame();
     }
@@ -2232,47 +2133,110 @@
         document.getElementById("selected-qty-text").innerText = `${qty}개`;
     }
 
-    function buyPotion(type, potionId) {
-        const pObj = potionTypes.find(p => p.id === potionId);
+    function buyPotion(type, pId) {
+        let pObj = potionTypes.find(p => p.id === pId);
         if (!pObj) return;
 
-        const totalCost = pObj.price * selectedPotionBuyQty;
-        if (player.gold < totalCost) {
-            showCustomModal(`골드가 부족합니다! (필요: ${totalCost.toLocaleString()}G)`);
+        let cost = pObj.price * selectedPotionBuyQty;
+        if (player.gold < cost) {
+            showCustomModal(`골드가 부족합니다! (필요: ${cost.toLocaleString()}G)`);
             return;
         }
 
-        player.gold -= totalCost;
-        if (type === 'hp') player.hpPotions[potionId] += selectedPotionBuyQty;
-        if (type === 'mp') player.mpPotions[potionId] += selectedPotionBuyQty;
+        player.gold -= cost;
+        if (type === 'hp') player.hpPotions[pId] += selectedPotionBuyQty;
+        else player.mpPotions[pId] += selectedPotionBuyQty;
 
-        log(`🛒 <span style="color:#2ecc71;">[포션 구매]</span> ${pObj.name} 포션 ${selectedPotionBuyQty}개를 구매했습니다. (-${totalCost.toLocaleString()}G)`);
+        log(`🧪 포션 구매: ${pObj.name} ${selectedPotionBuyQty}개 구매 완료!`);
         updateUI();
         saveGame();
     }
 
     function useHighestHpPotion() {
         for (let i = potionTypes.length - 1; i >= 0; i--) {
-            const p = potionTypes[i];
+            let p = potionTypes[i];
             if (player.hpPotions[p.id] > 0) {
                 player.hpPotions[p.id]--;
-                const maxHp = getTotalMaxHp();
+                let maxHp = getTotalMaxHp();
                 player.hp = Math.min(maxHp, player.hp + p.heal);
-                log(`❤️ <span style="color:#e74c3c;">[수동 HP포션]</span> ${p.name} 사용! (HP +${p.heal})`);
+                log(`❤️ <span style="color:#e74c3c;">[포션 사용]</span> ${p.name} 사용! (HP +${p.heal})`);
                 updateUI();
                 saveGame();
                 return;
             }
         }
-        showCustomModal("보유 중인 HP 포션이 없습니다!");
+        showCustomModal("사용 가능한 HP 포션이 없습니다.");
+    }
+
+    function showSkillTooltip(skillId) {
+        let skill = skillList.find(s => s.id === skillId);
+        if (!skill) return;
+
+        const modal = document.getElementById("skill-tooltip");
+        document.getElementById("stt-title").innerText = skill.name;
+        document.getElementById("stt-category").innerText = `[${skill.category.toUpperCase()}]`;
+        document.getElementById("stt-mp").innerText = `🔮 소모 MP: ${skill.costMp}`;
+
+        let currentText = skill.learned ? `현재 Lv.${skill.level} (효과 적용 중)` : `미습득 상태`;
+        document.getElementById("stt-current").innerText = `현재 효과: ${currentText}`;
+
+        let nextText = `다음 레벨 효과: 효과 증대`;
+        document.getElementById("stt-next").innerText = nextText;
+        document.getElementById("stt-desc").innerText = skill.desc;
+
+        modal.style.display = "block";
+    }
+
+    function hideSkillTooltip() {
+        document.getElementById("skill-tooltip").style.display = "none";
+    }
+
+    // 요청 1 반영: 스킬 레벨업 시 maxLevel 한계 체크 및 적용
+    function upgradeSkillLevel(skillId) {
+        let skill = skillList.find(s => s.id === skillId);
+        if (!skill || !skill.learned) return;
+
+        if (skill.level >= skill.maxLevel) {
+            showCustomModal(`해당 스킬은 이미 최대 레벨(Lv.${skill.maxLevel})에 도달했습니다!`);
+            return;
+        }
+
+        let cost = skill.price * skill.level;
+        if (player.skillShards < cost) {
+            showCustomModal(`스킬 조각이 부족합니다! (필요: ${cost}개)`);
+            return;
+        }
+
+        player.skillShards -= cost;
+        skill.level++;
+        log(`✨ 스킬 강화: **${skill.name}** Lv.${skill.level}로 레벨업!`);
+        updateUI();
+        saveGame();
+    }
+
+    function learnSkill(skillId) {
+        let skill = skillList.find(s => s.id === skillId);
+        if (!skill || skill.learned) return;
+
+        if (player.gold < skill.price) {
+            showCustomModal(`골드가 부족합니다! (필요: ${skill.price}G)`);
+            return;
+        }
+
+        player.gold -= skill.price;
+        skill.learned = true;
+        skill.level = 1;
+        log(`📜 스습득: 신규 스킬 **${skill.name}**을(를) 배웠습니다!`);
+        updateUI();
+        saveGame();
     }
 
     function showTooltip(event, item) {
         if (!item) return;
         activeTooltipItem = item;
-        const tooltip = document.getElementById("item-tooltip");
+        const modal = document.getElementById("item-tooltip");
         document.getElementById("tt-title").innerText = item.name;
-        document.getElementById("tt-rarity").className = `tooltip-rarity ${item.color || 'rarity-일반'}`;
+        document.getElementById("tt-rarity").className = `tooltip-rarity ${item.color}`;
         document.getElementById("tt-rarity").innerText = `[${item.rarity} 등급]`;
 
         let statStr = "";
@@ -2281,84 +2245,20 @@
         document.getElementById("tt-stat").innerText = statStr;
 
         let effHtml = "";
-        if (item.effects && item.effects.length > 0) {
+        if (item.effects) {
             item.effects.forEach(eff => {
-                let desc = eff.desc.replace("{chance}", eff.chance).replace("{val}", eff.val);
-                effHtml += `<div class="tooltip-effect"><span>✨ ${eff.name}</span><span>${desc}</span></div>`;
+                effHtml += `<div class="tooltip-effect"><span>✨ ${eff.name}</span><span>${eff.desc || ''}</span></div>`;
             });
         }
         document.getElementById("tt-effects-list").innerHTML = effHtml;
-        document.getElementById("tt-desc").innerText = item.desc;
+        document.getElementById("tt-desc").innerText = item.desc || "";
 
-        tooltip.style.display = "block";
+        modal.style.display = "block";
         event.stopPropagation();
     }
 
     function hideTooltip() {
         document.getElementById("item-tooltip").style.display = "none";
-        activeTooltipItem = null;
-    }
-
-    function showSkillTooltip(skill) {
-        const tooltip = document.getElementById("skill-tooltip");
-        document.getElementById("stt-title").innerText = skill.name;
-        document.getElementById("stt-category").innerText = `[${skill.category.toUpperCase()}]`;
-        document.getElementById("stt-mp").innerText = `🔮 소모 MP: ${skill.costMp}`;
-
-        let curText = skill.learned ? `현재 레벨: Lv.${skill.level} (효과 적용 중)` : `미습득 상태`;
-        document.getElementById("stt-current").innerText = curText;
-
-        let nextText = `다음 레벨 효과: (스킬 강화로 성장 가능)`;
-        document.getElementById("stt-next").innerText = nextText;
-        document.getElementById("stt-desc").innerText = skill.desc;
-
-        tooltip.style.display = "block";
-    }
-
-    function hideSkillTooltip() {
-        document.getElementById("skill-tooltip").style.display = "none";
-    }
-
-    function buySkill(skillId) {
-        const skill = skillList.find(s => s.id === skillId);
-        if (!skill || skill.learned) return;
-
-        if (player.gold < skill.price) {
-            showCustomModal(`골드가 부족합니다! (필요: ${skill.price.toLocaleString()}G)`);
-            return;
-        }
-
-        player.gold -= skill.price;
-        skill.learned = true;
-        skill.level = 1;
-
-        log(`📜 <span style="color:#2ecc71;">[스킬 습득]</span> 새로운 스킬 **${skill.name}**을(를) 배웠습니다!`);
-        updateUI();
-        saveGame();
-    }
-
-    function upgradeSkill(skillId) {
-        const skill = skillList.find(s => s.id === skillId);
-        if (!skill || !skill.learned) return;
-
-        // 요청 1 반영: maxLevel 한계 체크
-        if (skill.maxLevel && skill.level >= skill.maxLevel) {
-            showCustomModal(`해당 스킬은 이미 최대 레벨(Lv.${skill.maxLevel})에 도달했습니다!`);
-            return;
-        }
-
-        const cost = skill.level * 2;
-        if (player.skillShards < cost) {
-            showCustomModal(`스킬 조각이 부족합니다! (필요: ${cost}개)`);
-            return;
-        }
-
-        player.skillShards -= cost;
-        skill.level++;
-
-        log(`✨ <span style="color:#f1c40f;">[스킬 강화]</span> **${skill.name}** 레벨이 Lv.${skill.level}로 상승했습니다!`);
-        updateUI();
-        saveGame();
     }
 
     function updateUI() {
@@ -2385,10 +2285,8 @@
 
         document.getElementById("hp-val-text").innerText = `${player.hp} / ${maxHp}`;
         document.getElementById("hp-bar").style.width = `${Math.max(0, Math.min(100, (player.hp / maxHp) * 100))}%`;
-
         document.getElementById("mp-val-text").innerText = `${player.mp} / ${maxMp}`;
         document.getElementById("mp-bar").style.width = `${Math.max(0, Math.min(100, (player.mp / maxMp) * 100))}%`;
-
         document.getElementById("exp-val-text").innerText = `${player.exp} / ${player.maxExp}`;
         document.getElementById("exp-bar").style.width = `${Math.max(0, Math.min(100, (player.exp / player.maxExp) * 100))}%`;
 
@@ -2406,6 +2304,7 @@
         document.getElementById("stat-int").innerText = player.intStat;
         document.getElementById("stat-luk").innerText = player.lukStat;
         document.getElementById("p-stat-pts").innerText = player.statPts;
+        document.getElementById("p-hyper-pts").innerText = player.hyperPts;
 
         document.getElementById("hstat-dmg").innerText = getHyperStatVal('dmg');
         document.getElementById("hstat-critdmg").innerText = getHyperStatVal('critDmg');
@@ -2413,212 +2312,187 @@
         document.getElementById("hstat-boss").innerText = getHyperStatVal('boss');
         document.getElementById("hstat-cube").innerText = getHyperStatVal('cube');
         document.getElementById("hstat-shard").innerText = getHyperStatVal('shard');
-        document.getElementById("p-hyper-pts").innerText = player.hyperPts;
 
-        // 장비 UI
-        const w = player.weapon;
-        const a = player.armor;
-        const s = player.subWeapon;
-        const e = player.earring;
+        document.getElementById("p-weapon").innerText = player.weapon ? `[${player.weapon.rarity}] ${player.weapon.name} (+${player.weapon.atk})` : "없음";
+        document.getElementById("p-armor").innerText = player.armor ? `[${player.armor.rarity}] ${player.armor.name} (+${player.armor.hp})` : "없음";
+        document.getElementById("p-subweapon").innerText = player.subWeapon ? `[${player.subWeapon.rarity}] ${player.subWeapon.name}` : "없음";
+        document.getElementById("p-earring").innerText = player.earring ? `[${player.earring.rarity}] ${player.earring.name}` : "없음";
 
-        const wElem = document.getElementById("p-weapon");
-        wElem.className = `item-hover ${w.color || 'rarity-일반'}`;
-        wElem.innerText = `${w.name} (공+${w.atk})`;
+        document.getElementById("shop-w-info").innerText = player.weapon ? `[${player.weapon.rarity}] ${player.weapon.name}` : "없음";
+        document.getElementById("shop-a-info").innerText = player.armor ? `[${player.armor.rarity}] ${player.armor.name}` : "없음";
+        document.getElementById("shop-sub-info").innerText = player.subWeapon ? `[${player.subWeapon.rarity}] ${player.subWeapon.name}` : "없음";
+        document.getElementById("shop-earring-info").innerText = player.earring ? `[${player.earring.rarity}] ${player.earring.name}` : "없음";
 
-        const aElem = document.getElementById("p-armor");
-        aElem.className = `item-hover ${a.color || 'rarity-일반'}`;
-        aElem.innerText = `${a.name} (체+${a.hp})`;
+        // 장비 구매 비용 동적 반영 (요청 3 반영)
+        let eqCost = Math.floor(150 * Math.pow(stage, 1.15));
+        document.getElementById("cost-weapon").innerText = eqCost;
+        document.getElementById("cost-armor").innerText = eqCost;
+        document.getElementById("cost-subWeapon").innerText = eqCost;
 
-        const sElem = document.getElementById("p-subweapon");
-        sElem.className = `item-hover ${s.color || 'rarity-일반'}`;
-        sElem.innerText = `${s.name} (공+${s.atk || 0})`;
+        // 포션 요약
+        let hpSum = 0, mpSum = 0;
+        potionTypes.forEach(p => {
+            hpSum += player.hpPotions[p.id];
+            mpSum += player.mpPotions[p.id];
+        });
+        document.getElementById("hp-potions-summary").innerText = `총 ${hpSum}개 보유`;
+        document.getElementById("mp-potions-summary").innerText = `총 ${mpSum}개 보유`;
 
-        const eElem = document.getElementById("p-earring");
-        if (e) {
-            eElem.className = `item-hover ${e.color || 'rarity-일반'}`;
-            eElem.innerText = `${e.name}`;
-        } else {
-            eElem.className = "item-hover";
-            eElem.innerText = "없음";
+        // 포션 상점 렌더링
+        let hpShopHtml = "";
+        potionTypes.forEach(p => {
+            let totalPPrice = p.price * selectedPotionBuyQty;
+            hpShopHtml += `<button class="potion-shop-btn" onclick="buyPotion('hp', '${p.id}')">
+                <span class="potion-icon">${p.icon}</span>
+                <span>${p.name} (+${p.heal})</span>
+                <span style="color:#f1c40f; font-size:0.75rem;">${totalPPrice.toLocaleString()}G (${player.hpPotions[p.id]}개)</span>
+            </button>`;
+        });
+        document.getElementById("hp-potion-shop").innerHTML = hpShopHtml;
+
+        let mpShopHtml = "";
+        potionTypes.forEach(p => {
+            let totalPPrice = p.price * selectedPotionBuyQty;
+            mpShopHtml += `<button class="potion-shop-btn" onclick="buyPotion('mp', '${p.id}')">
+                <span class="potion-icon">${p.icon}</span>
+                <span>${p.name} (+${p.heal})</span>
+                <span style="color:#f1c40f; font-size:0.75rem;">${totalPPrice.toLocaleString()}G (${player.mpPotions[p.id]}개)</span>
+            </button>`;
+        });
+        document.getElementById("mp-potion-shop").innerHTML = mpShopHtml;
+
+        // 전리품 가방 렌더링 (요청 6 반영: 가격 표시)
+        let lootHtml = "";
+        let hasLoot = false;
+        for (let key in player.inventory) {
+            hasLoot = true;
+            let item = player.inventory[key];
+            lootHtml += `<div class="loot-item">📦 ${key} x${item.count} <small style="color:#f1c40f;">(${item.val * item.count}G)</small></div>`;
         }
-
-        document.getElementById("shop-w-info").className = `item-hover ${w.color || 'rarity-일반'}`;
-        document.getElementById("shop-w-info").innerText = `${w.name} (공+${w.atk})`;
-        document.getElementById("shop-a-info").className = `item-hover ${a.color || 'rarity-일반'}`;
-        document.getElementById("shop-a-info").innerText = `${a.name} (체+${a.hp})`;
-        document.getElementById("shop-sub-info").className = `item-hover ${s.color || 'rarity-일반'}`;
-        document.getElementById("shop-sub-info").innerText = `${s.name} (공+${s.atk || 0})`;
-
-        const shopEarringInfo = document.getElementById("shop-earring-info");
-        if (e) {
-            shopEarringInfo.className = `item-hover ${e.color || 'rarity-일반'}`;
-            shopEarringInfo.innerText = `${e.name}`;
-        } else {
-            shopEarringInfo.className = "item-hover";
-            shopEarringInfo.innerText = "없음 (미장착)";
-        }
-
-        // 요청 4 반영: 스테이지에 따른 장비 가격 동적 반영
-        document.getElementById("cost-weapon").innerText = Math.floor(150 * Math.pow(1.15, stage - 1)).toLocaleString();
-        document.getElementById("cost-armor").innerText = Math.floor(150 * Math.pow(1.15, stage - 1)).toLocaleString();
-        document.getElementById("cost-subWeapon").innerText = Math.floor(150 * Math.pow(1.15, stage - 1)).toLocaleString();
-
-        // 포션 요약 (요청 7 반영)
-        let hpSumSummary = potionTypes.map(p => `${p.name}:${player.hpPotions[p.id]}`).join(" | ");
-        let mpSumSummary = potionTypes.map(p => `${p.name}:${player.mpPotions[p.id]}`).join(" | ");
-        document.getElementById("hp-potions-summary").innerText = hpSumSummary;
-        document.getElementById("mp-potions-summary").innerText = mpSumSummary;
-
-        document.getElementById("auto-potion-enabled").checked = player.autoPotion.enabled;
-        document.getElementById("auto-hp-threshold").value = player.autoPotion.hpThreshold;
-        document.getElementById("auto-mp-threshold").value = player.autoPotion.mpThreshold;
+        if (!hasLoot) lootHtml = `<small style="color: #777;">수집된 전리품이 없습니다.</small>`;
+        document.getElementById("loot-container").innerHTML = lootHtml;
 
         // 룬 소켓 정보
-        const sockRarity = itemData.rarities[player.socketRarityIdx];
-        const sockDisplay = document.getElementById("socket-rarity-display");
-        sockDisplay.className = `rarity-${sockRarity.name}`;
-        sockDisplay.innerText = `[${sockRarity.name}]`;
-        document.getElementById("socket-max-slots").innerText = `${sockRarity.maxRuneSlots}개`;
-        document.getElementById("socket-upgrade-chance").innerText = `${sockRarity.upgradeChance}%`;
-        document.getElementById("socket-upgrade-cost").innerText = sockRarity.upgradeShardCost.toLocaleString();
-
+        let sock = itemData.rarities[player.socketRarityIdx];
+        document.getElementById("socket-rarity-display").innerText = `[${sock.name}]`;
+        document.getElementById("socket-rarity-display").className = `rarity-${sock.name}`;
+        document.getElementById("socket-max-slots").innerText = `${sock.maxRuneSlots}개`;
+        document.getElementById("socket-upgrade-chance").innerText = `${sock.upgradeChance}%`;
+        document.getElementById("socket-upgrade-cost").innerText = sock.upgradeShardCost;
         document.getElementById("rune-bag-cap").innerText = `${player.runeBag.length}/${player.runeBagCap}`;
-        document.getElementById("equipped-rune-count").innerText = player.equippedRunes.length;
-        document.getElementById("equipped-rune-max").innerText = sockRarity.maxRuneSlots;
 
-        // 장착된 룬 리스트
+        // 장착 중인 룬
         let eqRuneHtml = "";
         player.equippedRunes.forEach((r, idx) => {
-            const tInfo = runeTypes.find(t => t.stat === r.stat);
-            eqRuneHtml += `<div class="rune-badge" style="border-color:#f1c40f;" onclick="unequipRune(${idx})">
-                <span class="rarity-${r.rarity}">[${r.rarity}] ${r.name} 룬</span> (${tInfo.desc} +${(r.val * 100).toFixed(1)}${r.unit}) <small style="color:#e74c3c;">[클릭시 해제]</small>
+            eqRuneHtml += `<div class="rune-badge" onclick="unequipRune(${idx})">
+                <span class="${itemData.rarities.find(x=>x.name===r.rarity)?.color}">[${r.rarity}] ${r.name} 룬 (+${(r.val*100).toFixed(1)}${r.unit})</span>
+                <small style="color:#e74c3c; float:right;">[클릭시 장착해제]</small>
             </div>`;
         });
         if (player.equippedRunes.length === 0) eqRuneHtml = `<small style="color:#777;">장착된 룬이 없습니다.</small>`;
         document.getElementById("equipped-runes-list").innerHTML = eqRuneHtml;
+        document.getElementById("equipped-rune-count").innerText = player.equippedRunes.length;
+        document.getElementById("equipped-rune-max").innerText = sock.maxRuneSlots;
 
-        // 보관 중인 룬 가방
+        // 보유 중인 룬 가방
         let invRuneHtml = "";
         player.runeBag.forEach((r, idx) => {
-            const tInfo = runeTypes.find(t => t.stat === r.stat);
-            invRuneHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:6px 8px; margin-bottom:4px; border-radius:6px; font-size:0.8rem;">
-                <span class="rarity-${r.rarity}" style="cursor:pointer;" onclick='showRuneDesc(${JSON.stringify(r)})'>[${r.rarity}] ${r.name} 룬 (+${(r.val * 100).toFixed(1)}${r.unit})</span>
+            invRuneHtml += `<div class="rune-badge" style="display:flex; justify-content:space-between; align-items:center;">
+                <span onclick="showRuneDesc(player.runeBag[${idx}])" class="${itemData.rarities.find(x=>x.name===r.rarity)?.color}" style="cursor:pointer;">[${r.rarity}] ${r.name} 룬 (+${(r.val*100).toFixed(1)}${r.unit})</span>
                 <div style="display:flex; gap:4px;">
-                    <button onclick="equipRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#27ae60;">장착</button>
-                    <button onclick="rerollRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad;">큐브(비용:${itemData.rarities.find(x=>x.name===r.rarity).runeCubeCost})</button>
-                    <button onclick="sellRuneFromBag(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#c0392b;">판매</button>
+                    <button onclick="equipRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#27ae60; min-height:24px;">장착</button>
+                    <button onclick="rerollRuneVal(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:24px;">큐브</button>
+                    <button onclick="sellRuneFromBag(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#c0392b; min-height:24px;">판매</button>
                 </div>
             </div>`;
         });
         if (player.runeBag.length === 0) invRuneHtml = `<small style="color:#777;">보관 중인 룬이 없습니다.</small>`;
         document.getElementById("inventory-runes-list").innerHTML = invRuneHtml;
 
-        // 전리품 수집 가방 (요청 6 반영: 가격 표시)
-        const lootContainer = document.getElementById("loot-container");
-        let lootHtml = "";
-        for (let name in player.inventory) {
-            const item = player.inventory[name];
-            lootHtml += `<div class="loot-item"><span>📦 ${name} x${item.count}</span><span style="color:#f1c40f;">(${item.val * item.count}G)</span></div>`;
-        }
-        if (Object.keys(player.inventory).length === 0) lootHtml = `<small style="color: #777;">수집된 전리품이 없습니다.</small>`;
-        lootContainer.innerHTML = lootHtml;
-
-        // 포션 상점 렌더링
-        let hpShopHtml = "";
-        let mpShopHtml = "";
-        potionTypes.forEach(p => {
-            hpShopHtml += `<button class="potion-shop-btn" onclick="buyPotion('hp', '${p.id}')">
-                <span class="potion-icon">${p.icon}</span>
-                <span>${p.name} (회복 ${p.heal})</span>
-                <span style="color:#f1c40f; font-size:0.75rem;">${p.price * selectedPotionBuyQty}G</span>
-            </button>`;
-            mpShopHtml += `<button class="potion-shop-btn" onclick="buyPotion('mp', '${p.id}')">
-                <span class="potion-icon">${p.icon}</span>
-                <span>${p.name} (회복 ${p.heal})</span>
-                <span style="color:#3498db; font-size:0.75rem;">${p.price * selectedPotionBuyQty}G</span>
-            </button>`;
-        });
-        document.getElementById("hp-potion-shop").innerHTML = hpShopHtml;
-        document.getElementById("mp-potion-shop").innerHTML = mpShopHtml;
-
-        // 귀걸이 등급업 정보
-        const eRarities = itemData.earringRarities;
-        const curEIdx = player.earring ? eRarities.findIndex(r => r.name === player.earring.rarity) : 0;
-        const curEObj = eRarities[curEIdx >= 0 ? curEIdx : 0];
-        const isProt = document.getElementById("earring-protect-checkbox").checked;
-        const neededCoin = isProt ? curEObj.baseCoin * curEObj.protectMult : curEObj.baseCoin;
-
-        const eCurrElem = document.getElementById("earring-upgrade-current-rarity");
-        eCurrElem.className = `rarity-${curEObj.name}`;
-        eCurrElem.innerText = `[${curEObj.name}]`;
-        document.getElementById("earring-upgrade-chance-text").innerText = `${(curEObj.upgradeChance * 100).toFixed(1)}%`;
-        document.getElementById("earring-downgrade-chance-text").innerText = `${(curEObj.downgradeChance * 100).toFixed(1)}%`;
-        document.getElementById("earring-upgrade-cost-text").innerText = neededCoin;
-
-        // 스킬 샵 렌더링
+        // 스킬 샵 & 업그레이드
         let skillShopHtml = "";
         let skillUpHtml = "";
-        skillList.forEach(skill => {
-            if (!skill.learned) {
-                skillShopHtml += `<div class="shop-item" onclick="showSkillTooltip(${JSON.stringify(skill)})">
+        skillList.forEach(s => {
+            if (!s.learned) {
+                skillShopHtml += `<div class="shop-item" onclick="showSkillTooltip(${s.id})">
                     <div>
-                        <span class="skill-type-tag tag-${skill.category}">${skill.category.toUpperCase()}</span>
-                        <strong>${skill.name}</strong> <small style="color:#aaa;">(${skill.price.toLocaleString()}G)</small>
+                        <span class="skill-type-tag tag-${s.category}">${s.category.toUpperCase()}</span>
+                        <strong>${s.name}</strong> <small style="color:#aaa;">(${s.price}G)</small>
                     </div>
-                    <button onclick="event.stopPropagation(); buySkill(${skill.id})" style="padding:4px 10px; font-size:0.75rem; background:#27ae60;">배우기</button>
+                    <button onclick="event.stopPropagation(); learnSkill(${s.id})" style="padding:2px 8px; font-size:0.75rem; min-height:28px;">배우기</button>
                 </div>`;
             } else {
-                let maxText = skill.maxLevel ? ` / MAX ${skill.maxLevel}` : "";
-                skillUpHtml += `<div style="background:#222; padding:6px 8px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                let cost = s.price * s.level;
+                skillUpHtml += `<div class="shop-item" onclick="showSkillTooltip(${s.id})">
                     <div>
-                        <strong>${skill.name}</strong> <span style="color:#2ecc71;">Lv.${skill.level}${maxText}</span>
+                        <span class="skill-type-tag tag-${s.category}">Lv.${s.level}/${s.maxLevel}</span>
+                        <strong>${s.name}</strong> <small style="color:#f39c12;">(비용: ${cost} 조각)</small>
                     </div>
-                    <button onclick="upgradeSkill(${skill.id})" style="padding:2px 8px; font-size:0.75rem; background:#8e44ad;">강화 (비용:${skill.level * 2})</button>
+                    <button onclick="event.stopPropagation(); upgradeSkillLevel(${s.id})" style="padding:2px 8px; font-size:0.75rem; min-height:28px; background:#8e44ad;">강화</button>
                 </div>`;
             }
         });
         document.getElementById("skill-shop-list").innerHTML = skillShopHtml || `<small style="color:#777;">배울 수 있는 스킬이 없습니다.</small>`;
-        document.getElementById("skill-upgrade-list").innerHTML = skillUpHtml || `<small style="color:#777;">보유 중인 스킬이 없습니다.</small>`;
+        document.getElementById("skill-upgrade-list").innerHTML = skillUpHtml || `<small style="color:#777;">강화할 보유 스킬이 없습니다.</small>`;
 
-        // 요청 3 반영: 귀걸이 등급업 가이드 표 동적 생성
-        let earringGuideHtml = "";
-        eRarities.forEach(er => {
-            earringGuideHtml += `<div class="rarity-guide-card"><span class="${er.color}">${er.name}</span>: 성공 ${(er.upgradeChance*100).toFixed(1)}% | 하락 ${(er.downgradeChance*100).toFixed(1)}%</div>`;
+        // 귀걸이 가이드
+        if (player.earring) {
+            let currEName = player.earring.rarity;
+            let eInfo = itemData.earringRarities.find(r => r.name === currEName) || itemData.earringRarities[0];
+            document.getElementById("earring-upgrade-current-rarity").innerText = `[${currEName}]`;
+            document.getElementById("earring-upgrade-current-rarity").className = `rarity-${currEName}`;
+            document.getElementById("earring-upgrade-chance-text").innerText = `${(eInfo.upgradeChance * 100).toFixed(1)}%`;
+            document.getElementById("earring-downgrade-chance-text").innerText = `${(eInfo.downgradeChance * 100).toFixed(1)}%`;
+            
+            const isProt = document.getElementById("earring-protect-checkbox").checked;
+            document.getElementById("earring-upgrade-cost-text").innerText = isProt ? eInfo.baseCoin * eInfo.protectMult : eInfo.baseCoin;
+        }
+
+        let eGuideHtml = "";
+        itemData.earringRarities.forEach(er => {
+            eGuideHtml += `<div class="rarity-guide-card"><span class="${er.color}">${er.name}</span>: 성공 ${(er.upgradeChance*100).toFixed(1)}%</div>`;
         });
-        const earringGuideGrid = document.getElementById("earring-guide-grid");
-        if (earringGuideGrid) earringGuideGrid.innerHTML = earringGuideHtml;
+        document.getElementById("earring-guide-grid").innerHTML = eGuideHtml;
 
-        // 스테이지 및 챕터 렌더링
+        // 전투 스테이지 UI
         document.getElementById("current-stage-display").innerText = `STAGE ${stage}`;
         document.getElementById("max-stage-display").innerText = maxStage;
         document.getElementById("battle-speed-coin-display").innerText = player.speedCoins;
 
-        const repeatBtn = document.getElementById("repeat-stage-btn");
+        const repBtn = document.getElementById("repeat-stage-btn");
         if (player.repeatStage) {
-            repeatBtn.innerText = "[ON] 반복사냥";
-            repeatBtn.style.background = "#e67e22";
+            repBtn.innerText = "[ON] 반복중";
+            repBtn.style.background = "#27ae60";
         } else {
-            repeatBtn.innerText = "[OFF] 진행중";
-            repeatBtn.style.background = "#555";
+            repBtn.innerText = "[OFF] 진행중";
+            repBtn.style.background = "#555";
         }
 
         const autoRestartCb = document.getElementById("auto-restart-checkbox");
         if (autoRestartCb) autoRestartCb.checked = player.autoRestart;
 
-        let chapterSelectHtml = "";
-        for (let i = 0; i < chapterNames.length; i++) {
-            let chapStartStage = (i * 10) + 1;
-            let disabledStr = chapStartStage > maxStage ? " (잠김)" : "";
-            chapterSelectHtml += `<option value="${i}" ${stage >= chapStartStage && stage < chapStartStage + 10 ? "selected" : ""}>${chapterNames[i]}${disabledStr}</option>`;
-        }
-        document.getElementById("chapter-select").innerHTML = chapterSelectHtml;
+        const autoPotionCb = document.getElementById("auto-potion-enabled");
+        if (autoPotionCb) autoPotionCb.checked = player.autoPotion.enabled;
+        document.getElementById("auto-hp-threshold").value = player.autoPotion.hpThreshold;
+        document.getElementById("auto-mp-threshold").value = player.autoPotion.mpThreshold;
 
-        let activeBuffsHtml = "";
-        player.activeBuffs.forEach(b => {
-            activeBuffsHtml += `<span class="buff-badge">✨ ${b.name} (${b.duration}턴)</span>`;
+        // 챕터 셀렉트박스
+        let chapHtml = "";
+        chapterNames.forEach((cName, idx) => {
+            let startSt = (idx * 10) + 1;
+            let disabled = startSt > maxStage ? "disabled" : "";
+            let selected = (stage >= startSt && stage <= startSt + 9) ? "selected" : "";
+            chapHtml += `<option value="${idx}" ${selected} ${disabled}>${cName}</option>`;
         });
-        if (player.activeBuffs.length === 0) activeBuffsHtml = `<span style="font-size:0.75rem; color:#777;">적용 중인 버프 없음</span>`;
-        document.getElementById("battle-active-buffs").innerHTML = activeBuffsHtml;
+        document.getElementById("chapter-select").innerHTML = chapHtml;
+
+        // 활성화된 버프 현황
+        let buffHtml = "";
+        player.activeBuffs.forEach(b => {
+            buffHtml += `<span class="buff-badge">✨ ${b.name} (${b.duration}턴)</span>`;
+        });
+        if (player.activeBuffs.length === 0) buffHtml = `<span style="font-size:0.75rem; color:#777;">적용 중인 버프 없음</span>`;
+        document.getElementById("battle-active-buffs").innerHTML = buffHtml;
     }
 
     window.onload = function() {
@@ -2631,3 +2505,4 @@
 </script>
 </body>
 </html>
+```[cite: 12]
