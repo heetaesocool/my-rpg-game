@@ -248,6 +248,13 @@
                 </div>
                 <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
                 <div>🧊 <strong>큐브:</strong> <span id="p-cubes" style="color:#00ffff; font-weight:bold;">0</span>개</div>
+                
+                <!-- 3. 용사 정보에 골드/큐브/룬 파편 획득률 정보 추가 -->
+                <div style="margin-top: 6px; padding: 6px 8px; background: #181818; border-radius: 6px; font-size: 0.78rem; color: #f39c12; border: 1px dashed #444;">
+                    💰 골드 획득량: +<span id="p-gold-rate">0</span>% | 🧊 큐브 드랍률: +<span id="p-cube-rate">0</span>%<br>
+                    💎 룬조각 드랍률: +<span id="p-shard-rate">0</span>%
+                </div>
+
                 <div style="margin-top: 8px;">
                     <small>체력 (HP)</small>
                     <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
@@ -429,6 +436,12 @@
                     <span>📍 탐험 및 전투</span>
                     <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
                 </h2>
+                
+                <!-- 4. 10라운드 단위 챕터 표시 영역 -->
+                <div id="chapter-display" style="text-align: center; color: #3498db; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px; background: #111; padding: 4px; border-radius: 6px; border: 1px solid #333;">
+                    📖 챕터 1: 초심자의 숲
+                </div>
+
                 <div class="stage-control">
                     <button class="stage-btn" id="btn-prev-stage" onclick="changeStage(-1)">◀ 이전</button>
                     <div style="text-align: center;">
@@ -462,6 +475,7 @@
         }
     } catch(e) { console.log("Firebase 연동 시도 중 알림"); }
 
+    // 1. 일반 몬스터 데이터 목록 복구
     const randomMonsterPool = [
         { name: "고블린", loot: "고블린 머리띠", val: 20 },
         { name: "스켈레톤", loot: "단단한 뼈조각", val: 30 },
@@ -475,14 +489,32 @@
         { name: "서큐버스", loot: "악마의 날개", val: 120 }
     ];
 
+    // 1. 네임드, 엘리트 접두사 데이터 복구 및 정의
     const monsterPrefixes = [
-        { name: "단단한", hpMult: 1.5, atkMult: 1.0, isElite: false },
-        { name: "광폭한", hpMult: 1.1, atkMult: 1.4, isElite: false },
-        { name: "👑 [엘리트]", hpMult: 2.2, atkMult: 1.6, isElite: true },
-        { name: "🔥 [네임드]", hpMult: 2.8, atkMult: 1.8, isElite: true }
+        { name: "", hpMult: 1.0, atkMult: 1.0, type: "normal" },
+        { name: "단단한", hpMult: 1.4, atkMult: 1.1, type: "normal" },
+        { name: "광폭한", hpMult: 1.2, atkMult: 1.4, type: "normal" },
+        { name: "👑 [엘리트]", hpMult: 2.2, atkMult: 1.6, type: "elite" },
+        { name: "🔥 [네임드]", hpMult: 2.8, atkMult: 1.8, type: "named" }
     ];
 
-    const bossTitles = ["파멸의", "심연의", "저주받은", "지옥의", "태초의"];
+    // 4. 10라운드 단위 챕터 명칭
+    const chapterNames = [
+        "초심자의 숲", "마왕성 입구", "어둠의 심연", "용의 둥지", "시계탑 최하층",
+        "시간의 신전", "세계수 정상", "차원의 균열", "신의 정원", "최후의 전장"
+    ];
+
+    // 5. 10라운드마다 등장하는 메이플스토리 최종 보스 목록
+    const mapleBosses = [
+        { name: "자쿰", loot: "자쿰의 투구", val: 500 },
+        { name: "혼테일", loot: "혼테일의 목걸이", val: 1000 },
+        { name: "핑크빈", loot: "카오스 핑크빈 마크", val: 2000 },
+        { name: "시그너스", loot: "여제의 코인", val: 3500 },
+        { name: "루시드", loot: "몽환의 흔적", val: 5000 },
+        { name: "윌", loot: "거미의 고치", val: 7500 },
+        { name: "진 힐라", loot: "욕망의 결정", val: 10000 },
+        { name: "검은 마법사", loot: "창세의 알", val: 20000 }
+    ];
 
     const itemData = {
         rarities: [
@@ -552,26 +584,20 @@
         { name: "행운", stat: "critChance", baseVal: 0.03, unit: "%", desc: "크리티컬 확률 +" }
     ];
 
+    // 2. 다양한 스킬 복구 및 확장 (공격/버프/패시브)
     const skillList = [
         { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 피해를 줍니다." },
         { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 30, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격 피해" },
-        { id: 2, category: "active", name: "🩸 흡혈 베기", costMp: 25, mult: 2.0, healPercent: 0.3, price: 800, learned: false, level: 0, desc: "피해를 주고 HP 회복" },
+        { id: 2, category: "active", name: "🩸 흡혈 베기", costMp: 25, mult: 2.0, price: 800, learned: false, level: 0, desc: "피해를 주고 HP 일부 회복" },
         { id: 3, category: "active", name: "❄️ 프로스트 노바", costMp: 35, mult: 3.0, price: 1200, learned: false, level: 0, desc: "얼음 파동 폭발 피해" },
         { id: 4, category: "active", name: "☄️ 메테오 스트라이크", costMp: 60, mult: 5.5, price: 2500, learned: false, level: 0, desc: "운석을 떨어뜨려 치명적인 피해" },
-        { id: 5, category: "active", name: "⚔️ 궁극: 십자베기", costMp: 80, mult: 8.0, price: 5000, learned: false, level: 0, desc: "빛의 속도로 교차 공격" },
         
         { id: 10, category: "buff", name: "⚔️ 분노의 포효", costMp: 35, duration: 5, buffAtkPercent: 0.20, price: 400, learned: false, level: 0, desc: "5턴 동안 공격력 상승 버프" },
         { id: 11, category: "buff", name: "🛡️ 수호자의 의지", costMp: 30, duration: 5, buffHpPercent: 0.25, price: 600, learned: false, level: 0, desc: "5턴 동안 최대 HP 수치 증가" },
         { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 40, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률 상승" },
-        { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 70, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력 폭발적 상승" },
 
         { id: 20, category: "passive", name: "🏋️ 단련된 육체", statType: "hpPercent", valPerLevel: 0.08, price: 300, learned: false, level: 0, desc: "상시 최대 HP 증가" },
         { id: 21, category: "passive", name: "🗡️ 날카로운 칼날", statType: "atkPercent", valPerLevel: 0.05, price: 500, learned: false, level: 0, desc: "상시 공격력 증가" },
-        { id: 22, category: "passive", name: "🔮 마력의 원천", statType: "mpPercent", valPerLevel: 0.10, price: 450, learned: false, level: 0, desc: "상시 최대 MP 증가" },
-        { id: 23, category: "passive", name: "🎯 급소 노리기", statType: "critChance", valPerLevel: 0.02, price: 1000, learned: false, level: 0, desc: "상시 크리티컬 확률 증가" },
-        { id: 24, category: "passive", name: "💰 탐욕의 눈빛", statType: "goldBonus", valPerLevel: 0.05, price: 700, learned: false, level: 0, desc: "상시 골드 획득량 증가" },
-        
-        /* 4. 신규 유틸리티 패시브 스킬 추가 */
         { id: 25, category: "passive", name: "📖 지식 탐구", statType: "expBonus", valPerLevel: 0.10, price: 600, learned: false, level: 0, desc: "경험치 획득량 증가" },
         { id: 26, category: "passive", name: "💎 룬 감지", statType: "shardChanceBonus", valPerLevel: 0.05, price: 800, learned: false, level: 0, desc: "룬 조각 드랍 확률 증가" },
         { id: 27, category: "passive", name: "🏺 파편 수집가", statType: "shardAmountBonus", valPerLevel: 1.0, price: 1200, learned: false, level: 0, desc: "룬 조각 드랍 수량 증가" },
@@ -600,14 +626,14 @@
     let currentRankingCategory = "gold";
     let activeTooltipItem = null;
 
-    // ---------------- [2. 자동 저장 & 불러오기 (localStorage)] ----------------
+    // ---------------- [localStorage 자동 저장 & 불러오기] ----------------
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v2", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v3", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v2");
+        const data = localStorage.getItem("tochi_rpg_save_v3");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -620,11 +646,11 @@
                         if (target) { target.learned = s.learned; target.level = s.level; }
                     });
                 }
-            } catch(e) { console.log("저장 데이터 로드 예외 처리"); }
+            } catch(e) {}
         }
     }
 
-    // ---------------- [온라인 랭킹 시스템] ----------------
+    // ---------------- [실시간 온라인 랭킹] ----------------
     function switchRankingType(type) {
         currentRankingCategory = type;
         document.querySelectorAll('.ranking-sub-btn').forEach(btn => btn.classList.remove('active'));
@@ -633,7 +659,7 @@
     }
 
     function syncAndFetchRanking() {
-        if (!db) { alert("Firebase 연동이 되지 않았습니다."); return; }
+        if (!db) { alert("Firebase 연동이 설정되지 않았습니다."); return; }
         const userRef = db.ref("rankings/" + player.name);
         userRef.set({
             name: player.name,
@@ -650,7 +676,7 @@
     function fetchRankingData() {
         const container = document.getElementById("ranking-container");
         if (!db) {
-            container.innerHTML = `<div style="text-align:center; color:#e74c3c; padding:15px;">Firebase 연동 준비 필요</div>`;
+            container.innerHTML = `<div style="text-align:center; color:#e74c3c; padding:15px;">Firebase 연동 필요</div>`;
             return;
         }
         container.innerHTML = `<div style="text-align:center; color:#777; padding:10px;">불러오는 중...</div>`;
@@ -715,8 +741,7 @@
         if (newName && newName.trim() !== "") {
             player.name = newName.trim();
             log(`✏️ 이름이 **[${player.name}]**(으)로 변경되었습니다.`);
-            updateUI();
-            saveGame();
+            updateUI(); saveGame();
         }
     }
 
@@ -751,7 +776,6 @@
 
     function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; activeTooltipItem = null; }
 
-    // ---------------- [2. 큐브 재설정 기능] ----------------
     function useCubeOnOption(optIdx) {
         if (player.cubes <= 0) { alert("🧊 큐브가 부족합니다!"); return; }
         if (!activeTooltipItem || !activeTooltipItem.effects[optIdx]) return;
@@ -769,9 +793,7 @@
 
         activeTooltipItem.effects[optIdx] = newEff;
         log(`🧊 큐브를 사용하여 옵션을 **[${newEff.name}]**(으)로 변경하였습니다!`);
-        updateUI();
-        showTooltip(event, activeTooltipItem);
-        saveGame();
+        updateUI(); showTooltip(event, activeTooltipItem); saveGame();
     }
 
     function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -818,8 +840,7 @@
         lootKeys.forEach(key => {
             const item = player.inventory[key];
             if (item && item.count > 0) {
-                const div = document.createElement("div");
-                div.className = "loot-item";
+                const div = document.createElement("div"); div.className = "loot-item";
                 div.innerHTML = `📦 <strong>${key}</strong> x${item.count} <span style="color:#f1c40f;">(${item.val * item.count}G)</span>`;
                 container.appendChild(div);
             }
@@ -877,24 +898,41 @@
         updateUI(); saveGame();
     }
 
+    // 1 & 4 & 5. 몬스터 스폰 로직 (메이플 보스, 라운드/챕터, 접두사 복구)
     function spawnMonster() {
+        const isChapterBoss = stage % 10 === 0; // 10라운드마다 메이플 보스
+        
+        if (isChapterBoss) {
+            const bossIndex = Math.min(Math.floor((stage / 10) - 1), mapleBosses.length - 1);
+            const bossData = mapleBosses[bossIndex];
+            return {
+                name: `🔥 [챕터 최종 보스] ${bossData.name}`,
+                type: "chapterBoss",
+                hp: Math.floor((100 + (stage * 50)) * 3.5),
+                maxHp: Math.floor((100 + (stage * 50)) * 3.5),
+                atk: Math.floor((15 + (stage * 8)) * 2.0),
+                expReward: Math.floor((100 + (stage * 30)) * 3.0),
+                goldReward: Math.floor((200 + (stage * 40)) * 3.0),
+                lootName: bossData.loot,
+                lootVal: bossData.val
+            };
+        }
+
+        // 일반 / 네임드 / 엘리트 스폰
         const prefix = monsterPrefixes[Math.floor(Math.random() * monsterPrefixes.length)];
-        const isBossStage = stage % 5 === 0;
         const base = randomMonsterPool[Math.floor(Math.random() * randomMonsterPool.length)];
-        let fullName = isBossStage ? `🔥 [스테이지 보스] ${bossTitles[Math.floor(Math.random() * bossTitles.length)]} ${base.name}` : `${prefix.name} ${base.name}`;
-        let hpMult = prefix.hpMult * (isBossStage ? 2.5 : 1.0);
-        let atkMult = prefix.atkMult * (isBossStage ? 1.8 : 1.0);
-        let isElite = prefix.isElite || isBossStage;
+        let fullName = prefix.name !== "" ? `${prefix.name} ${base.name}` : base.name;
 
         return {
             name: fullName,
-            hp: Math.floor((35 + (stage * 22)) * hpMult),
-            maxHp: Math.floor((35 + (stage * 22)) * hpMult),
-            atk: Math.floor((7 + (stage * 5)) * atkMult),
-            expReward: Math.floor((30 + (stage * 12)) * (isElite ? 1.8 : 1.0)),
-            goldReward: Math.floor((25 + (stage * 18)) * (isElite ? 2.0 : 1.0)),
-            isElite: isElite,
-            lootName: `${base.name}의 파편`, lootVal: Math.floor(base.val * (isElite ? 2.0 : 1.0)), isBoss: isBossStage
+            type: prefix.type, // 'normal', 'elite', 'named'
+            hp: Math.floor((35 + (stage * 22)) * prefix.hpMult),
+            maxHp: Math.floor((35 + (stage * 22)) * prefix.hpMult),
+            atk: Math.floor((7 + (stage * 5)) * prefix.atkMult),
+            expReward: Math.floor((30 + (stage * 12)) * (prefix.type !== 'normal' ? 1.8 : 1.0)),
+            goldReward: Math.floor((25 + (stage * 18)) * (prefix.type !== 'normal' ? 2.0 : 1.0)),
+            lootName: `${base.name}의 파편`,
+            lootVal: Math.floor(base.val * (prefix.type !== 'normal' ? 2.0 : 1.0))
         };
     }
 
@@ -909,15 +947,27 @@
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
 
-        let baseDmg = Math.floor(getTotalAtk() * (0.9 + Math.random() * 0.2));
-        if (currentMonster.isBoss && player.hyperBoss > 0) {
+        // 스킬 사용 로직 (액티브 / 버프)
+        let skillBonusDmg = 1.0;
+        const learnedActives = skillList.filter(s => s.category === "active" && s.learned);
+        if (learnedActives.length > 0 && player.mp >= 20) {
+            const randSkill = learnedActives[Math.floor(Math.random() * learnedActives.length)];
+            if (player.mp >= randSkill.costMp) {
+                player.mp -= randSkill.costMp;
+                skillBonusDmg = randSkill.mult + (randSkill.level * 0.4);
+                log(`✨ <span style="color:#f1c40f;">[스킬 발동] **${randSkill.name}**! (${skillBonusDmg.toFixed(1)}배 피해)</span>`);
+            }
+        }
+
+        let baseDmg = Math.floor(getTotalAtk() * skillBonusDmg * (0.9 + Math.random() * 0.2));
+        if (currentMonster.type === "chapterBoss" && player.hyperBoss > 0) {
             baseDmg = Math.floor(baseDmg * (1 + (player.hyperBoss * 0.04)));
         }
 
         let isCrit = Math.random() < (parseFloat(getTotalCritChance()) / 100);
         if (isCrit) baseDmg = Math.floor(baseDmg * (1.8 + (player.hyperCritDmg * 0.03)));
 
-        // 모든 장비의 옵션 효과 통합
+        // 특수 옵션 판정
         const allEffects = [...(player.weapon.effects||[]), ...(player.armor.effects||[]), ...(player.subWeapon ? player.subWeapon.effects||[] : [])];
         let isInstantKill = false; let isDoubleAttack = false;
 
@@ -936,7 +986,7 @@
             }
         });
 
-        if (isInstantKill) {
+        if (isInstantKill && currentMonster.type !== "chapterBoss") {
             baseDmg = currentMonster.hp;
             log(`💀 <span style="color:#e74c3c;"><strong>[즉사!]</strong></span> ${currentMonster.name} 즉사!`);
         } else if (isDoubleAttack) {
@@ -958,19 +1008,33 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold}G 획득!`);
 
-            // 큐브 드랍 판정 (아주 낮은 확률: 기본 0.5% + 스킬 + 하이퍼스탯)
-            const cubeDropChance = 0.005 + getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01);
-            if (Math.random() < cubeDropChance) {
-                player.cubes++;
-                log(`🧊 <span style="color:#00ffff;"><strong>[드랍!]</strong></span> 큐브 1개 획득!`);
-            }
+            // 5. 차등 드랍률 설정 (일반 몬스터는 큐브/룬조각 드랍 불가능)
+            if (currentMonster.type !== "normal") {
+                let cubeBaseChance = 0;
+                let shardBaseChance = 0;
 
-            // 룬 파편 드랍
-            const shardChance = (currentMonster.isBoss ? 0.50 : currentMonster.isElite ? 0.30 : 0.08) + getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02);
-            if (Math.random() < shardChance) {
-                const shardQty = (currentMonster.isBoss ? Math.floor(3 + Math.random() * 3) : 1) + Math.floor(getPassiveBonus("shardAmountBonus"));
-                player.shards += shardQty;
-                log(`💎 <span style="color:#00ffff;"><strong>[드랍!]</strong></span> 룬 파편 +${shardQty}개!`);
+                if (currentMonster.type === "chapterBoss") {
+                    cubeBaseChance = 0.50; // 50%
+                    shardBaseChance = 1.00; // 100% 확정
+                } else if (currentMonster.type === "elite" || currentMonster.type === "named") {
+                    cubeBaseChance = 0.05; // 5%
+                    shardBaseChance = 0.30; // 30%
+                }
+
+                // 큐브 드랍
+                const totalCubeChance = cubeBaseChance + getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01);
+                if (Math.random() < totalCubeChance) {
+                    player.cubes++;
+                    log(`🧊 <span style="color:#00ffff;"><strong>[전리품]</strong></span> 큐브 1개 획득!`);
+                }
+
+                // 룬 파편 드랍
+                const totalShardChance = shardBaseChance + getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02);
+                if (Math.random() < totalShardChance) {
+                    const shardQty = (currentMonster.type === "chapterBoss" ? Math.floor(3 + Math.random() * 4) : 1) + Math.floor(getPassiveBonus("shardAmountBonus"));
+                    player.shards += shardQty;
+                    log(`💎 <span style="color:#00ffff;"><strong>[전리품]</strong></span> 룬 파편 +${shardQty}개 획득!`);
+                }
             }
 
             const lootName = currentMonster.lootName;
@@ -1109,7 +1173,6 @@
         player.equippedRunes.splice(idx, 1); updateUI(); saveGame();
     }
 
-    // ---------------- [1. UI 업데이트 및 상점 착용장비 등급 색상 분기] ----------------
     function updateUI() {
         document.getElementById("p-name").innerText = player.name;
         document.getElementById("p-level").innerText = player.level;
@@ -1120,12 +1183,21 @@
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
 
+        // 3. 용사 정보 수치 업데이트
+        const totalGoldRate = ((getRuneBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100).toFixed(1);
+        const totalCubeRate = ((getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01)) * 100).toFixed(1);
+        const totalShardRate = ((getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02)) * 100).toFixed(1);
+
+        document.getElementById("p-gold-rate").innerText = totalGoldRate;
+        document.getElementById("p-cube-rate").innerText = totalCubeRate;
+        document.getElementById("p-shard-rate").innerText = totalShardRate;
+
         document.getElementById("p-atk").innerText = getTotalAtk();
         document.getElementById("p-crit").innerText = getTotalCritChance();
         document.getElementById("p-max-hp").innerText = getTotalMaxHp();
         document.getElementById("p-max-mp").innerText = getTotalMaxMp();
 
-        // 메인 창 착용 장비 색상 적용
+        // 장비 등급별 색상 표시
         const w = document.getElementById("p-weapon");
         w.innerText = `${player.weapon.name} (+${player.weapon.atk})`;
         w.className = `item-hover ${player.weapon.color}`;
@@ -1138,7 +1210,6 @@
         sub.innerText = `${player.subWeapon.name} (+${player.subWeapon.atk})`;
         sub.className = `item-hover ${player.subWeapon.color}`;
 
-        // 1. 상점&스킬센터 착용 장비 등급별 색상 분기
         const shopW = document.getElementById("shop-w-info");
         shopW.innerText = `${player.weapon.name} (공+${player.weapon.atk})`;
         shopW.className = `item-hover ${player.weapon.color}`;
@@ -1166,6 +1237,11 @@
 
         document.getElementById("p-potions").innerText = player.potions;
         document.getElementById("p-mp-potions").innerText = player.mpPotions;
+
+        // 4. 챕터 표기 업데이트
+        const currentChapterIdx = Math.floor((stage - 1) / 10);
+        const chapterName = chapterNames[Math.min(currentChapterIdx, chapterNames.length - 1)];
+        document.getElementById("chapter-display").innerText = `📖 챕터 ${currentChapterIdx + 1}: ${chapterName}`;
 
         document.getElementById("current-stage-display").innerText = "STAGE " + stage;
         document.getElementById("max-stage-display").innerText = maxStage;
@@ -1215,7 +1291,7 @@
         });
     }
 
-    // 게임 시작 시 불러오기 실행
+    // 게임 세이브 로드 및 초기 업데이트
     loadGame();
     updateUI();
 </script>
