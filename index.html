@@ -207,6 +207,11 @@
         .rarity-guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 0.75rem; margin-top: 6px; }
         .rarity-guide-card { background: #181818; padding: 6px; border-radius: 6px; border: 1px solid #333; }
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+
+        /* 1. 포션 구매 수량 조절용 패널 스타일 */
+        .potion-qty-selector { display: flex; gap: 4px; margin-bottom: 8px; background: #111; padding: 4px; border-radius: 6px; border: 1px solid #333; }
+        .potion-qty-btn { flex: 1; padding: 4px 0; font-size: 0.75rem; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; min-height: 28px; cursor: pointer; }
+        .potion-qty-btn.active { background: #e67e22; color: #fff; font-weight: bold; border-color: #e67e22; }
     </style>
 </head>
 <body class="mobile-mode">
@@ -274,7 +279,7 @@
                     🔮 보조장비: <span id="p-subweapon" class="item-hover" onclick="showTooltip(event, player.subWeapon)">낡은 부적</span>
                 </div>
                 
-                <!-- 5. 다양화된 포션 목록 UI -->
+                <!-- 다양화된 포션 목록 UI -->
                 <div style="margin-top: 8px;">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">❤️ HP 포션 보유 현황</div>
                     <div id="hp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
@@ -371,7 +376,7 @@
                 </div>
             </div>
 
-            <!-- 1 & 3 & 4. 룬 소켓 등급 및 룬의 큐브 옵션 돌리기 추가 -->
+            <!-- 룬 소켓 등급 및 룬의 큐브 옵션 돌리기 추가 -->
             <div class="card">
                 <h2>🔮 룬 소켓 & 룬의 큐브 시스템</h2>
                 
@@ -399,7 +404,7 @@
                 <h3>🎒 보관 중인 룬 가방 (🔮 룬의 큐브로 옵션 변경 가능)</h3>
                 <div id="inventory-runes-list"></div>
 
-                <!-- 3. 룬 소켓 등급 및 능력치 가이드 추가 -->
+                <!-- 룬 소켓 등급 및 능력치 가이드 -->
                 <div style="margin-top: 12px; border-top: 1px solid #333; padding-top: 8px; font-size:0.75rem; color:#ccc;">
                     <strong style="color:#f1c40f;">📖 룬 소켓 등급별 혜택 가이드</strong>
                     <div class="rarity-guide-grid">
@@ -440,7 +445,20 @@
                         <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 6px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
                         <button onclick="buyRandomItem('subWeapon')" style="background:#8e44ad; width: 100%; margin-bottom: 10px;">🔮 랜덤 보조장비 (<span id="cost-subWeapon">100</span>G)</button>
                         
-                        <!-- 5. 6단계 세분화된 포션 상점 -->
+                        <!-- 1. 포션 상점 다량 구매 수량 컨트롤러 추가 -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <h3>🧪 포션 구매 수량 설정</h3>
+                            <span style="font-size:0.75rem; color:#f1c40f;">선택 수량: <strong id="selected-qty-text">1개</strong></span>
+                        </div>
+                        <div class="potion-qty-selector">
+                            <button class="potion-qty-btn active" onclick="setPotionBuyQty(1, this)">1개</button>
+                            <button class="potion-qty-btn" onclick="setPotionBuyQty(3, this)">3개</button>
+                            <button class="potion-qty-btn" onclick="setPotionBuyQty(10, this)">10개</button>
+                            <button class="potion-qty-btn" onclick="setPotionBuyQty(20, this)">20개</button>
+                            <button class="potion-qty-btn" onclick="setPotionBuyQty(50, this)">50개</button>
+                            <button class="potion-qty-btn" onclick="setPotionBuyQty(100, this)">100개</button>
+                        </div>
+
                         <h3>❤️ HP 포션 상점</h3>
                         <div id="hp-potion-shop" class="potion-grid"></div>
 
@@ -541,7 +559,6 @@
         { name: "서큐버스", loot: "악마의 날개", val: 120 }
     ];
 
-    // 2. 확장된 20개 이상의 풍성한 접두사 데이터
     const monsterPrefixPool = [
         { name: "단단한", hpMult: 1.3, atkMult: 1.1, defMult: 1.3 },
         { name: "광폭한", hpMult: 1.1, atkMult: 1.4, defMult: 1.0 },
@@ -583,7 +600,6 @@
         { name: "검은 마법사", loot: "창세의 알", val: 20000, skillName: "🌌 파괴와 창조의 권능" }
     ];
 
-    // 1 & 4. 8가지 룬 소켓 등급 및 룬의 큐브 소모량 (runeCubeCost)
     const itemData = {
         rarities: [
             { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 1, upgradeShardCost: 100 },
@@ -602,7 +618,6 @@
         suffixes: ["강철", "파멸", "보석", "용기", "질풍", "분노", "제왕"]
     };
 
-    // 5. 6단계 체계적인 포션 정의 (소, 중, 대, 특대, 특특대, 퍼펙트)
     const potionTypes = [
         { id: "p1", name: "소형", heal: 80, price: 20 },
         { id: "p2", name: "중형", heal: 250, price: 70 },
@@ -650,10 +665,9 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, learned: false, level: 0, desc: "전리품 드랍 확률 증가" }
     ];
 
-    // 1 & 4 & 5. 룬의 큐브, 소켓 등급Index, 세분화된 포션 가방 적용
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
-        gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0, // 0: 일반 ~ 7: 신성
+        gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0,
         statPts: 0, hyperPts: 0, maxDmg: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
         hyperDmg: 0, hyperCrit: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0, hyperCube: 0, hyperShard: 0,
@@ -675,14 +689,17 @@
     let isPcMode = false;
     let currentRankingCategory = "gold";
     let activeTooltipItem = null;
+    
+    // 1. 선택된 포션 구매 수량 전역 변수 (기본 1개)
+    let selectedPotionBuyQty = 1;
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v6", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v7", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v6");
+        const data = localStorage.getItem("tochi_rpg_save_v7");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -974,12 +991,18 @@
         updateUI(); saveGame();
     }
 
-    // 2. 최대 4개 중첩 접두사 생성 및 능력치/보상 배율 적용
+    // 2. 접두사 붙는 몬스터 등장 확률 하향 조절 (체감 난이도 완화)
     function spawnMonster() {
         const isChapterBoss = stage % 10 === 0;
         
-        // 접두사 1~4개 난수 생성
-        const prefixCount = Math.floor(Math.random() * 4) + 1; // 1~4
+        // 접두사 개수 확률 조정 (1개: 75%, 2개: 18%, 3개: 5%, 4개: 2%)
+        const prefixRand = Math.random();
+        let prefixCount = 1;
+        if (prefixRand < 0.75) prefixCount = 1;
+        else if (prefixRand < 0.93) prefixCount = 2;
+        else if (prefixRand < 0.98) prefixCount = 3;
+        else prefixCount = 4;
+
         const chosenPrefixes = [];
         let combinedHpMult = 1.0;
         let combinedAtkMult = 1.0;
@@ -1032,11 +1055,9 @@
         };
     }
 
-    // 6. 자동 MP 포션 사용 함수
     function autoUseMpPotionIfNeeded(neededMp) {
         if (player.mp >= neededMp) return true;
         
-        // 높은 등급 포션부터 탐색하여 사용
         for (let i = potionTypes.length - 1; i >= 0; i--) {
             const p = potionTypes[i];
             if (player.mpPotions[p.id] > 0) {
@@ -1060,13 +1081,11 @@
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
 
-        // 스킬 사용 시 6. MP 자동 사용 기능 연동
         let skillBonusDmg = 1.0;
         const learnedActives = skillList.filter(s => s.category === "active" && s.learned);
         if (learnedActives.length > 0) {
             const randSkill = learnedActives[Math.floor(Math.random() * learnedActives.length)];
             
-            // MP 모자르면 포션 자동 사용 시도
             if (autoUseMpPotionIfNeeded(randSkill.costMp)) {
                 player.mp -= randSkill.costMp;
                 skillBonusDmg = randSkill.mult + (randSkill.level * 0.4);
@@ -1124,7 +1143,6 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold.toLocaleString()}G 획득!`);
 
-            // 2 & 4. 접두사 수치에 따른 드랍률 상향 및 룬의 큐브 드랍
             if (currentMonster.type !== "normal" || currentMonster.prefixCount >= 2) {
                 let cubeBaseChance = 0.02 * currentMonster.prefixCount;
                 let shardBaseChance = 0.10 * currentMonster.prefixCount;
@@ -1147,7 +1165,6 @@
                 }
             }
 
-            // 4. 아주 낮은 확률(2%)로 룬의 큐브 드랍
             if (Math.random() < 0.02 + (currentMonster.prefixCount * 0.005)) {
                 player.runeCubes++;
                 log(`🔮 <span style="color:#9b59b6;"><strong>[희귀 드랍]</strong></span> 룬의 큐브 1개 획득!`);
@@ -1238,16 +1255,32 @@
         updateUI(); saveGame();
     }
 
-    // 5. 6단계 포션 대량 구매 기능
+    // 1. 선택 수량 버튼 클릭 제어 함수
+    function setPotionBuyQty(qty, btn) {
+        selectedPotionBuyQty = qty;
+        document.querySelectorAll('.potion-qty-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.getElementById("selected-qty-text").innerText = `${qty}개`;
+    }
+
+    // 1. 선택된 수량만큼 여러 개 포션 구매 처리
     function buyPotionTier(kind, pId) {
         const pObj = potionTypes.find(p => p.id === pId);
         if (!pObj) return;
-        if (player.gold < pObj.price) { alert("골드가 부족합니다!"); return; }
+
+        const qty = selectedPotionBuyQty;
+        const totalCost = pObj.price * qty;
+
+        if (player.gold < totalCost) {
+            alert(`골드가 부족합니다! (필요: ${totalCost.toLocaleString()}G)`);
+            return;
+        }
         
-        player.gold -= pObj.price;
-        if (kind === 'hp') player.hpPotions[pId] = (player.hpPotions[pId] || 0) + 1;
-        else if (kind === 'mp') player.mpPotions[pId] = (player.mpPotions[pId] || 0) + 1;
+        player.gold -= totalCost;
+        if (kind === 'hp') player.hpPotions[pId] = (player.hpPotions[pId] || 0) + qty;
+        else if (kind === 'mp') player.mpPotions[pId] = (player.mpPotions[pId] || 0) + qty;
         
+        log(`🛒 <span style="color:#2ecc71;">[구매 완료]</span> ${pObj.name} 포션 x${qty}개 획득! (-${totalCost.toLocaleString()}G)`);
         updateUI(); saveGame();
     }
 
@@ -1280,7 +1313,6 @@
         updateUI(); saveGame();
     }
 
-    // 1. 룬 소켓 등급 상승 기능
     function upgradeRuneSocket() {
         if (player.socketRarityIdx >= itemData.rarities.length - 1) {
             alert("이미 최고 등급(신성)의 룬 소켓입니다!");
@@ -1301,7 +1333,7 @@
         updateUI(); saveGame();
     }
 
-    // 4. 룬의 큐브로 룬 옵션 변경 기능
+    // 3. 각각의 룬을 룬의 큐브로 옵션 돌리는 기능 (등급별 차등 개수 반영)
     function useRuneCubeOnRune(bagIdx) {
         const rune = player.runeBag[bagIdx];
         if (!rune) return;
@@ -1310,7 +1342,7 @@
         const reqCubes = rarityObj.runeCubeCost || 1;
 
         if (player.runeCubes < reqCubes) {
-            alert(`🔮 룬의 큐브가 부족합니다! (필요 수량: ${reqCubes}개)`);
+            alert(`🔮 룬의 큐브가 부족합니다! ([${rune.rarity}] 등급 필요 수량: ${reqCubes}개)`);
             return;
         }
 
@@ -1323,7 +1355,7 @@
         rune.unit = newBaseRune.unit;
         rune.desc = newBaseRune.desc;
 
-        log(`🔮 룬의 큐브 ${reqCubes}개를 사용하여 룬 옵션을 **[${newBaseRune.name}의 룬]**(으)로 변경하였습니다!`);
+        log(`🔮 룬의 큐브 ${reqCubes}개를 사용해 **[${rune.rarity}]** 룬의 옵션을 **[${newBaseRune.name}의 룬]**(으)로 재설정하였습니다!`);
         updateUI(); saveGame();
     }
 
@@ -1337,7 +1369,6 @@
         document.getElementById("equipped-rune-count").innerText = player.equippedRunes.length;
         document.getElementById("equipped-rune-max").innerText = socketRarity.maxRuneSlots;
 
-        // 장착 중인 룬
         const equippedContainer = document.getElementById("equipped-runes-list");
         equippedContainer.innerHTML = "";
         if (player.equippedRunes.length === 0) {
@@ -1356,7 +1387,6 @@
             });
         }
 
-        // 보관 중인 룬 가방 (룬의 큐브 돌리기 버튼 추가)
         const invContainer = document.getElementById("inventory-runes-list");
         invContainer.innerHTML = "";
         if (player.runeBag.length === 0) {
@@ -1369,7 +1399,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span class="${rune.color}">🔷 [${rune.rarity}] ${rune.name}</span>
                         <div>
-                            <button onclick="useRuneCubeOnRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:26px; margin-right:4px;">🔮 옵션 변경 (${rarityObj.runeCubeCost})</button>
+                            <button onclick="useRuneCubeOnRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:26px; margin-right:4px;">🔮 옵션 변경 (${rarityObj.runeCubeCost}개)</button>
                             <button onclick="equipRuneFromBag(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#27ae60; min-height:26px;">장착</button>
                         </div>
                     </div>
@@ -1435,28 +1465,32 @@
         updateUI(); saveGame();
     }
 
+    // 1. 동적 수량이 반영된 포션 상점 UI 렌더링
     function updatePotionShopUI() {
         const hpShop = document.getElementById("hp-potion-shop");
         const mpShop = document.getElementById("mp-potion-shop");
         hpShop.innerHTML = ""; mpShop.innerHTML = "";
 
+        const qty = selectedPotionBuyQty;
+
         potionTypes.forEach(p => {
+            const totalPrice = p.price * qty;
+
             const divHp = document.createElement("div"); divHp.className = "shop-item";
             divHp.innerHTML = `
-                <div><span>❤️ ${p.name} (${p.price}G)</span><br><small style="color:#aaa;">+${p.heal} HP</small></div>
-                <button onclick="buyPotionTier('hp', '${p.id}')" style="background:#27ae60; min-height:30px; padding:2px 8px;">구매</button>
+                <div><span>❤️ ${p.name} <small style="color:#f1c40f;">(${totalPrice.toLocaleString()}G / ${qty}개)</small></span><br><small style="color:#aaa;">개당 +${p.heal} HP</small></div>
+                <button onclick="buyPotionTier('hp', '${p.id}')" style="background:#27ae60; min-height:30px; padding:2px 8px;">구매 (${qty}개)</button>
             `;
             hpShop.appendChild(divHp);
 
             const divMp = document.createElement("div"); divMp.className = "shop-item";
             divMp.innerHTML = `
-                <div><span>🧪 ${p.name} (${p.price}G)</span><br><small style="color:#aaa;">+${p.heal} MP</small></div>
-                <button onclick="buyPotionTier('mp', '${p.id}')" style="background:#2980b9; min-height:30px; padding:2px 8px;">구매</button>
+                <div><span>🧪 ${p.name} <small style="color:#f1c40f;">(${totalPrice.toLocaleString()}G / ${qty}개)</small></span><br><small style="color:#aaa;">개당 +${p.heal} MP</small></div>
+                <button onclick="buyPotionTier('mp', '${p.id}')" style="background:#2980b9; min-height:30px; padding:2px 8px;">구매 (${qty}개)</button>
             `;
             mpShop.appendChild(divMp);
         });
 
-        // 용사 상태창 포션 보유 요약
         const hpSum = potionTypes.map(p => `${p.name}:${player.hpPotions[p.id]||0}`).join(" | ");
         const mpSum = potionTypes.map(p => `${p.name}:${player.mpPotions[p.id]||0}`).join(" | ");
         document.getElementById("hp-potions-summary").innerText = hpSum;
