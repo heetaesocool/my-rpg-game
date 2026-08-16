@@ -460,7 +460,7 @@
             <div class="card">
                 <h2>🏰 상점 & 스킬 센터</h2>
                 
-                <!-- 신규: 쿠폰 입력 센터 UI -->
+                <!-- 쿠폰 입력 센터 UI -->
                 <div style="background:#151515; border:1px solid #333; padding:10px; border-radius:8px; margin-bottom:12px;">
                     <h3 style="color:#f1c40f; margin-bottom:4px;">🎁 쿠폰 입력 센터</h3>
                     <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">쿠폰 코드를 입력하면 재화를 얻을 수 있습니다.</p>
@@ -755,11 +755,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList, battleSpeed };
-        localStorage.setItem("tochi_rpg_save_v12", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v13", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v12");
+        const data = localStorage.getItem("tochi_rpg_save_v13");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -786,7 +786,6 @@
         }
     }
 
-    // 신규: 쿠폰 사용 기능 함수
     function useCoupon() {
         const inputElem = document.getElementById("coupon-input");
         const code = inputElem.value.trim();
@@ -1092,11 +1091,15 @@
     }
 
     function getTotalMaxHp() {
-        return Math.floor((player.baseHp + player.armor.hp) * (1 + getPassiveBonus("hpPercent") + getRuneBonus("hpPercent") + getBuffBonus("buffHpPercent")));
+        // 레벨이 올라갈수록 기본 체력 증가 반영 (레벨당 +20)
+        const levelBonusHp = (player.level - 1) * 20;
+        return Math.floor((player.baseHp + levelBonusHp + player.armor.hp) * (1 + getPassiveBonus("hpPercent") + getRuneBonus("hpPercent") + getBuffBonus("buffHpPercent")));
     }
 
     function getTotalMaxMp() {
-        return Math.floor((player.baseMp + (player.intStat * 15)) * (1 + getRuneBonus("mpPercent") + getPassiveBonus("mpPercent")));
+        // 레벨이 올라갈수록 기본 마나 증가 반영 (레벨당 +10)
+        const levelBonusMp = (player.level - 1) * 10;
+        return Math.floor((player.baseMp + levelBonusMp + (player.intStat * 15)) * (1 + getRuneBonus("mpPercent") + getPassiveBonus("mpPercent")));
     }
 
     function log(msg) {
@@ -1471,8 +1474,9 @@
             player.level++; player.exp -= player.maxExp; player.maxExp = Math.floor(player.maxExp * 1.5);
             player.statPts += 5;
             if (player.level % 10 === 0) player.hyperPts++;
+            // 레벨 업 시 최대 HP/MP 수치에 맞춰 현재 체력/마나 풀회복
             player.hp = getTotalMaxHp(); player.mp = getTotalMaxMp();
-            log(`🎉🎉 <span style="color:#f1c40f;"><strong>LEVEL UP! Lv.${player.level}</strong></span> 🎉🎉`);
+            log(`🎉🎉 <span style="color:#f1c40f;"><strong>LEVEL UP! Lv.${player.level} (최대 HP/MP 증가!)</strong></span> 🎉🎉`);
         }
     }
 
