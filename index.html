@@ -319,13 +319,26 @@
                     🔮 보조장비: <span id="p-subweapon" class="item-hover" onclick="showTooltip(event, player.subWeapon)">낡은 부적</span>
                 </div>
                 
-                <!-- 포션 보유 현황 UI -->
-                <div style="margin-top: 8px;">
-                    <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">❤️ HP 포션 보유 현황</div>
-                    <div id="hp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
-                    <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">🧪 MP 포션 보유 현황 (자동 사용 설정됨)</div>
-                    <div id="mp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
-                    <button onclick="useHighestHpPotion()" style="background: #c0392b; width: 100%;">❤️ 최고등급 HP 포션 즉시 사용</button>
+                <!-- 포션 보유 현황 및 자동 사용 설정 UI -->
+                <div style="margin-top: 8px; background: #151515; border: 1px solid #333; padding: 8px; border-radius: 8px;">
+                    <h3 style="color:#f1c40f; margin-bottom: 6px; font-size:0.85rem;">❤️ 포션 자동 사용 설정</h3>
+                    <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="auto-potion-enabled" onchange="toggleAutoPotionSetting(this)" style="width:16px; height:16px; cursor:pointer;">
+                            <span>포션 자동 사용 활성화 (낮은 등급부터 1개씩 소모)</span>
+                        </label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span>HP 자동 사용 임계값 (%):</span>
+                            <input type="number" id="auto-hp-threshold" min="0" max="100" value="50" onchange="updatePotionThreshold('hp', this.value)" style="width:70px; background:#222; border:1px solid #444; color:#fff; padding:4px 6px; border-radius:4px; text-align:center; font-size:0.8rem; min-height:28px;">
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span>MP 자동 사용 임계값 (%):</span>
+                            <input type="number" id="auto-mp-threshold" min="0" max="100" value="30" onchange="updatePotionThreshold('mp', this.value)" style="width:70px; background:#222; border:1px solid #444; color:#fff; padding:4px 6px; border-radius:4px; text-align:center; font-size:0.8rem; min-height:28px;">
+                        </div>
+                    </div>
+                    <div style="font-size:0.75rem; color:#aaa; margin-top:6px;">❤️ HP 포션: <span id="hp-potions-summary"></span></div>
+                    <div style="font-size:0.75rem; color:#aaa; margin-top:2px;">🧪 MP 포션: <span id="mp-potions-summary"></span></div>
+                    <button onclick="useHighestHpPotion()" style="background: #c0392b; width: 100%; margin-top:6px;">❤️ 최고등급 HP 포션 즉시 사용</button>
                 </div>
             </div>
 
@@ -506,7 +519,7 @@
                         <h3>❤️ HP 포션 상점</h3>
                         <div id="hp-potion-shop" class="potion-grid"></div>
 
-                        <h3>🧪 MP 포션 상점 (자동 사용)</h3>
+                        <h3>🧪 MP 포션 상점</h3>
                         <div id="mp-potion-shop" class="potion-grid"></div>
                     </div>
 
@@ -658,14 +671,14 @@
 
     const itemData = {
         rarities: [
-            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 1, upgradeShardCost: 100 },
-            { name: "고급", mult: 1.3, color: "rarity-고급", chance: 0.25, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 2, upgradeShardCost: 300 },
-            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 2, cubeCost: 2, runeCubeCost: 2, maxRuneSlots: 3, upgradeShardCost: 600 },
-            { name: "영웅", mult: 2.3, color: "rarity-영웅", chance: 0.11, effectCount: 2, cubeCost: 3, runeCubeCost: 3, maxRuneSlots: 4, upgradeShardCost: 1200 },
-            { name: "전설", mult: 3.2, color: "rarity-전설", chance: 0.06, effectCount: 3, cubeCost: 4, runeCubeCost: 4, maxRuneSlots: 5, upgradeShardCost: 2500 },
-            { name: "신화", mult: 4.5, color: "rarity-신화", chance: 0.03, effectCount: 3, cubeCost: 5, runeCubeCost: 5, maxRuneSlots: 6, upgradeShardCost: 5000 },
-            { name: "초월", mult: 6.0, color: "rarity-초월", chance: 0.015, effectCount: 4, cubeCost: 6, runeCubeCost: 6, maxRuneSlots: 7, upgradeShardCost: 10000 },
-            { name: "신성", mult: 8.5, color: "rarity-신성", chance: 0.005, effectCount: 5, cubeCost: 8, runeCubeCost: 8, maxRuneSlots: 8, upgradeShardCost: 0 }
+            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 1, upgradeShardCost: 100, sellShard: 1 },
+            { name: "고급", mult: 1.3, color: "rarity-고급", chance: 0.25, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 2, upgradeShardCost: 300, sellShard: 2 },
+            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 2, cubeCost: 2, runeCubeCost: 2, maxRuneSlots: 3, upgradeShardCost: 600, sellShard: 3 },
+            { name: "영웅", mult: 2.3, color: "rarity-영웅", chance: 0.11, effectCount: 2, cubeCost: 3, runeCubeCost: 3, maxRuneSlots: 4, upgradeShardCost: 1200, sellShard: 4 },
+            { name: "전설", mult: 3.2, color: "rarity-전설", chance: 0.06, effectCount: 3, cubeCost: 4, runeCubeCost: 4, maxRuneSlots: 5, upgradeShardCost: 2500, sellShard: 5 },
+            { name: "신화", mult: 4.5, color: "rarity-신화", chance: 0.03, effectCount: 3, cubeCost: 5, runeCubeCost: 5, maxRuneSlots: 6, upgradeShardCost: 5000, sellShard: 6 },
+            { name: "초월", mult: 6.0, color: "rarity-초월", chance: 0.015, effectCount: 4, cubeCost: 6, runeCubeCost: 6, maxRuneSlots: 7, upgradeShardCost: 10000, sellShard: 7 },
+            { name: "신성", mult: 8.5, color: "rarity-신성", chance: 0.005, effectCount: 5, cubeCost: 8, runeCubeCost: 8, maxRuneSlots: 8, upgradeShardCost: 0, sellShard: 8 }
         ],
         weaponBases: ["단검", "장검", "메이스", "대검", "배틀액스", "창", "지팡이"],
         armorBases: ["천 옷", "가죽 갑옷", "사슬 갑옷", "플레이트 아머", "용비늘 갑옷"],
@@ -738,6 +751,7 @@
         subWeapon: { type: "subWeapon", name: "낡은 부적", atk: 0, rarity: "일반", color: "rarity-일반", effects: [], desc: "낡았지만 기운이 담긴 부적" },
         hpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
         mpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
+        autoPotion: { enabled: false, hpThreshold: 50, mpThreshold: 30 },
         hp: 120, mp: 50,
         equippedRunes: [], runeBag: [], runeBagCap: 10, activeBuffs: [], inventory: {}, usedCoupons: []
     };
@@ -755,11 +769,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList, battleSpeed };
-        localStorage.setItem("tochi_rpg_save_v13", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v15", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v13");
+        const data = localStorage.getItem("tochi_rpg_save_v15");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -774,6 +788,7 @@
                 if (!player.speedCoins) player.speedCoins = 0;
                 if (!player.hpPotions) player.hpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.mpPotions) player.mpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
+                if (!player.autoPotion) player.autoPotion = { enabled: false, hpThreshold: 50, mpThreshold: 30 };
                 if (!player.activeBuffs) player.activeBuffs = [];
                 if (!player.usedCoupons) player.usedCoupons = [];
                 if (parsed.skillList) {
@@ -784,6 +799,74 @@
                 }
             } catch(e) {}
         }
+    }
+
+    // 포션 자동 사용 설정 조작 함수들
+    function toggleAutoPotionSetting(checkbox) {
+        player.autoPotion.enabled = checkbox.checked;
+        saveGame();
+    }
+
+    function updatePotionThreshold(type, val) {
+        let num = parseInt(val);
+        if (isNaN(num)) num = 0;
+        if (num < 0) num = 0;
+        if (num > 100) num = 100;
+        if (type === 'hp') player.autoPotion.hpThreshold = num;
+        if (type === 'mp') player.autoPotion.mpThreshold = num;
+        saveGame();
+    }
+
+    // 전투 중이나 턴마다 자동 포션 체크 (낮은 등급부터 1개씩 소모)
+    function checkAndUseAutoPotions() {
+        if (!player.autoPotion.enabled) return;
+
+        const maxHp = getTotalMaxHp();
+        const maxMp = getTotalMaxMp();
+        const hpPercent = (player.hp / maxHp) * 100;
+        const mpPercent = (player.mp / maxMp) * 100;
+
+        // HP 자동 사용 체크 (낮은 등급 p1 -> p6 순서)
+        if (hpPercent <= player.autoPotion.hpThreshold && player.hp < maxHp) {
+            for (let i = 0; i < potionTypes.length; i++) {
+                const p = potionTypes[i];
+                if (player.hpPotions[p.id] > 0) {
+                    player.hpPotions[p.id]--;
+                    player.hp = Math.min(maxHp, player.hp + p.heal);
+                    log(`❤️ <span style="color:#e74c3c;">[자동 HP포션]</span> ${p.name} 사용! (HP +${p.heal})`);
+                    break;
+                }
+            }
+        }
+
+        // MP 자동 사용 체크 (낮은 등급 p1 -> p6 순서)
+        if (mpPercent <= player.autoPotion.mpThreshold && player.mp < maxMp) {
+            for (let i = 0; i < potionTypes.length; i++) {
+                const p = potionTypes[i];
+                if (player.mpPotions[p.id] > 0) {
+                    player.mpPotions[p.id]--;
+                    player.mp = Math.min(maxMp, player.mp + p.heal);
+                    log(`🧪 <span style="color:#3498db;">[자동 MP포션]</span> ${p.name} 사용! (MP +${p.heal})`);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 룬 판매 기능 (등급별 1~8개 차등 지급)
+    function sellRuneFromBag(bagIdx) {
+        const rune = player.runeBag[bagIdx];
+        if (!rune) return;
+
+        const rarityObj = itemData.rarities.find(r => r.name === rune.rarity) || itemData.rarities[0];
+        const rewardShards = rarityObj.sellShard || 1;
+
+        player.runeBag.splice(bagIdx, 1);
+        player.shards += rewardShards;
+
+        log(`💎 <span style="color:#2ecc71;">[룬 판매]</span> [${rune.rarity}] ${rune.name}을(를) 판매하여 <strong>룬 파편 +${rewardShards}개</strong>를 획득했습니다.`);
+        updateUI();
+        saveGame();
     }
 
     function useCoupon() {
@@ -1091,13 +1174,11 @@
     }
 
     function getTotalMaxHp() {
-        // 레벨이 올라갈수록 기본 체력 증가 반영 (레벨당 +20)
         const levelBonusHp = (player.level - 1) * 20;
         return Math.floor((player.baseHp + levelBonusHp + player.armor.hp) * (1 + getPassiveBonus("hpPercent") + getRuneBonus("hpPercent") + getBuffBonus("buffHpPercent")));
     }
 
     function getTotalMaxMp() {
-        // 레벨이 올라갈수록 기본 마나 증가 반영 (레벨당 +10)
         const levelBonusMp = (player.level - 1) * 10;
         return Math.floor((player.baseMp + levelBonusMp + (player.intStat * 15)) * (1 + getRuneBonus("mpPercent") + getPassiveBonus("mpPercent")));
     }
@@ -1250,21 +1331,6 @@
         };
     }
 
-    function autoUseMpPotionIfNeeded(neededMp) {
-        if (player.mp >= neededMp) return true;
-        
-        for (let i = potionTypes.length - 1; i >= 0; i--) {
-            const p = potionTypes[i];
-            if (player.mpPotions[p.id] > 0) {
-                player.mpPotions[p.id]--;
-                player.mp = Math.min(getTotalMaxMp(), player.mp + p.heal);
-                log(`🧪 <span style="color:#3498db;">[자동 MP포션]</span> ${p.name} 사용! (MP +${p.heal})`);
-                if (player.mp >= neededMp) return true;
-            }
-        }
-        return player.mp >= neededMp;
-    }
-
     function battleTurn() {
         if (!currentMonster || currentMonster.hp <= 0) {
             currentMonster = spawnMonster();
@@ -1276,6 +1342,9 @@
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
 
+        // 전투 턴 시작 시 자동 포션 사용 체크
+        checkAndUseAutoPotions();
+
         let skillBonusDmg = 1.0;
         const learnedCastables = skillList.filter(s => (s.category === "active" || s.category === "buff") && s.learned);
         
@@ -1285,7 +1354,7 @@
             const mpReduce = getPassiveBonus("mpCostReduce");
             const finalCostMp = Math.max(1, Math.floor(randSkill.costMp * (1 - mpReduce)));
 
-            if (autoUseMpPotionIfNeeded(finalCostMp)) {
+            if (player.mp >= finalCostMp) {
                 player.mp -= finalCostMp;
                 
                 if (randSkill.category === "buff") {
@@ -1428,6 +1497,9 @@
             player.hp -= mDamage;
             log(`💥 ${currentMonster.name}의 공격! ${mDamage.toLocaleString()} 피해! (남은 HP: ${Math.max(0, player.hp).toLocaleString()})`);
 
+            // 피격 후 자동 포션 체크 한번 더 실행
+            checkAndUseAutoPotions();
+
             if (player.hp <= 0) {
                 log(`💀 쓰러졌습니다... HP/MP 회복 후 재도전합니다.`);
                 player.hp = getTotalMaxHp(); player.mp = getTotalMaxMp();
@@ -1474,7 +1546,6 @@
             player.level++; player.exp -= player.maxExp; player.maxExp = Math.floor(player.maxExp * 1.5);
             player.statPts += 5;
             if (player.level % 10 === 0) player.hyperPts++;
-            // 레벨 업 시 최대 HP/MP 수치에 맞춰 현재 체력/마나 풀회복
             player.hp = getTotalMaxHp(); player.mp = getTotalMaxMp();
             log(`🎉🎉 <span style="color:#f1c40f;"><strong>LEVEL UP! Lv.${player.level} (최대 HP/MP 증가!)</strong></span> 🎉🎉`);
         }
@@ -1634,9 +1705,10 @@
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span class="${rune.color}">🔷 [${rune.rarity}] ${rune.name}</span>
-                        <div>
-                            <button onclick="useRuneCubeOnRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:26px; margin-right:4px;">🔮 옵션 변경 (${rarityObj.runeCubeCost}개)</button>
-                            <button onclick="equipRuneFromBag(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#27ae60; min-height:26px;">장착</button>
+                        <div style="display:flex; gap:4px;">
+                            <button onclick="useRuneCubeOnRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:26px;">🔮 변경 (${rarityObj.runeCubeCost})</button>
+                            <button onclick="sellRuneFromBag(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#c0392b; min-height:26px;">💰 판매 (${rarityObj.sellShard})</button>
+                            <button onclick="equipRuneFromBag(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#27ae60; min-height:26px;">장착</button>
                         </div>
                     </div>
                     <small style="color:#ccc;">${rune.desc}${Math.round(rune.val * 100)}${rune.unit}</small>
@@ -1767,6 +1839,13 @@
         document.getElementById("p-stat-pts").innerText = player.statPts;
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
+
+        // 자동 포션 설정 UI 동기화
+        if (player.autoPotion) {
+            document.getElementById("auto-potion-enabled").checked = player.autoPotion.enabled;
+            document.getElementById("auto-hp-threshold").value = player.autoPotion.hpThreshold;
+            document.getElementById("auto-mp-threshold").value = player.autoPotion.mpThreshold;
+        }
 
         const totalGoldRateVal = (getRuneBonus("goldBonus") + getPassiveBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100;
         const totalGoldRate = totalGoldRateVal.toFixed(1);
