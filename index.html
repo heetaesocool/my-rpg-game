@@ -213,6 +213,14 @@
         .potion-qty-btn.active { background: #e67e22; color: #fff; font-weight: bold; border-color: #e67e22; }
         
         .stat-bar-header { display: flex; justify-content: space-between; align-items: center; }
+
+        /* 배속 컨트롤 스타일 */
+        .speed-control-box {
+            background: #181818; border: 1px solid #333; padding: 8px; border-radius: 8px; margin-bottom: 8px;
+        }
+        .speed-btn-group { display: flex; gap: 6px; margin-top: 6px; }
+        .speed-btn { flex: 1; min-height: 32px; font-size: 0.78rem; background: #222; color: #aaa; border: 1px solid #444; border-radius: 6px; }
+        .speed-btn.active { background: #e67e22; color: #fff; font-weight: bold; border-color: #f39c12; }
     </style>
 </head>
 <body class="mobile-mode">
@@ -271,6 +279,7 @@
                 </div>
                 <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
                 <div>🧊 <strong>큐브:</strong> <span id="p-cubes" style="color:#00ffff; font-weight:bold;">0</span>개 | 🔮 <strong>룬의 큐브:</strong> <span id="p-rune-cubes" style="color:#9b59b6; font-weight:bold;">0</span>개</div>
+                <div>⏩ <strong>배속 코인:</strong> <span id="p-speed-coins" style="color:#f39c12; font-weight:bold;">0</span>개</div>
                 
                 <!-- 지표 정보 -->
                 <div style="margin-top: 6px; padding: 6px 8px; background: #181818; border-radius: 6px; font-size: 0.78rem; color: #f39c12; border: 1px dashed #444;">
@@ -278,7 +287,7 @@
                     💎 룬조각 드랍률: +<span id="p-shard-rate">0</span>% | 📦 전리품 드랍률: +<span id="p-loot-rate">0</span>%
                 </div>
 
-                <!-- 1. HP 및 MP 수치 상세화 표기 추가 (n / nn) -->
+                <!-- HP / MP 상세 수치 표기 -->
                 <div style="margin-top: 8px;">
                     <div class="stat-bar-header">
                         <small>체력 (HP)</small>
@@ -523,6 +532,20 @@
                     <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
                 </h2>
                 
+                <!-- 신규: 전투속도 배속 설정 UI -->
+                <div class="speed-control-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; font-weight:bold; color:#f1c40f;">⏩ 전투 속도 배속 설정</span>
+                        <span style="font-size:0.75rem; color:#aaa;">보유: <strong id="battle-speed-coin-display" style="color:#f39c12;">0</strong>개</span>
+                    </div>
+                    <div class="speed-btn-group">
+                        <button id="btn-speed-1" class="speed-btn active" onclick="setBattleSpeed(1)">1배속<br><small>(무료)</small></button>
+                        <button id="btn-speed-15" class="speed-btn" onclick="setBattleSpeed(1.5)">1.5배속<br><small>(100개)</small></button>
+                        <button id="btn-speed-2" class="speed-btn" onclick="setBattleSpeed(2)">2배속<br><small>(300개)</small></button>
+                        <button id="btn-speed-3" class="speed-btn" onclick="setBattleSpeed(3)">3배속<br><small>(500개)</small></button>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 8px; background: #181818; padding: 6px 10px; border-radius: 8px; border: 1px dashed #333;">
                     <div style="font-size:0.75rem; color:#f39c12; margin-bottom:4px; font-weight:bold;">⚡ 현재 활성화된 버프 현황:</div>
                     <div id="battle-active-buffs" style="min-height: 22px; display: flex; flex-wrap: wrap; gap: 4px;">
@@ -692,9 +715,10 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, costMp: 0, learned: false, level: 0, desc: "전리품 드랍 확률을 증대시킵니다." }
     ];
 
+    // speedCoins: 신규 재화 추가
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
-        gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0,
+        gold: 200, shards: 0, cubes: 0, runeCubes: 0, speedCoins: 0, socketRarityIdx: 0,
         statPts: 0, hyperPts: 0, maxDmg: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
         hyperDmg: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0, hyperCube: 0, hyperShard: 0,
@@ -712,6 +736,7 @@
     let maxStage = 1;
     let isAutoBattling = false;
     let battleInterval = null;
+    let battleSpeed = 1; // 기본 1배속
     let currentMonster = null;
     let isPcMode = false;
     let currentRankingCategory = "gold";
@@ -719,22 +744,24 @@
     let selectedPotionBuyQty = 1;
 
     function saveGame() {
-        const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v10", JSON.stringify(saveData));
+        const saveData = { player, stage, maxStage, skillList, battleSpeed };
+        localStorage.setItem("tochi_rpg_save_v11", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v10");
+        const data = localStorage.getItem("tochi_rpg_save_v11");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
                 player = { ...player, ...parsed.player };
                 stage = parsed.stage || 1;
                 maxStage = parsed.maxStage || 1;
+                battleSpeed = parsed.battleSpeed || 1;
                 if (!player.runeBag) player.runeBag = [];
                 if (!player.runeBagCap) player.runeBagCap = 10;
                 if (player.socketRarityIdx === undefined) player.socketRarityIdx = 0;
                 if (!player.runeCubes) player.runeCubes = 0;
+                if (!player.speedCoins) player.speedCoins = 0;
                 if (!player.hpPotions) player.hpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.mpPotions) player.mpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.activeBuffs) player.activeBuffs = [];
@@ -745,6 +772,35 @@
                     });
                 }
             } catch(e) {}
+        }
+    }
+
+    // 신규: 배속 설정 및 코인 차감 함수
+    function setBattleSpeed(speed) {
+        if (battleSpeed === speed) return;
+
+        const costMap = { 1.5: 100, 2: 300, 3: 500 };
+        const reqCoins = costMap[speed] || 0;
+
+        if (reqCoins > 0) {
+            if (player.speedCoins < reqCoins) {
+                alert(`⏩ 배속 코인이 부족합니다! (${speed}배속 필요: ${reqCoins}개)`);
+                return;
+            }
+            player.speedCoins -= reqCoins;
+            log(`⏩ 배속 코인 **${reqCoins}개**를 소모하여 **[${speed}배속]** 모드를 활성화했습니다!`);
+        } else {
+            log(`⏩ 전투 속도가 **[1배속]** 기본 상태로 전환되었습니다.`);
+        }
+
+        battleSpeed = speed;
+        updateUI();
+        saveGame();
+
+        if (isAutoBattling) {
+            clearInterval(battleInterval);
+            const intervalMs = Math.floor(800 / battleSpeed);
+            battleInterval = setInterval(battleTurn, intervalMs);
         }
     }
 
@@ -1259,6 +1315,13 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold.toLocaleString()}G 획득! ${rewardMult > 1 ? '(x2배)' : ''}`);
 
+            // 신규: 낮은 확률(3%)로 배속 코인 드랍
+            if (Math.random() < 0.03) {
+                const droppedCoins = (Math.floor(Math.random() * 2) + 1) * rewardMult;
+                player.speedCoins += droppedCoins;
+                log(`⏩ <span style="color:#f39c12;"><strong>[희귀 드랍]</strong></span> 배속 코인 +${droppedCoins}개 획득!`);
+            }
+
             if (currentMonster.type !== "normal" || currentMonster.prefixCount >= 2) {
                 let cubeBaseChance = 0.02 * currentMonster.prefixCount;
                 let shardBaseChance = 0.10 * currentMonster.prefixCount;
@@ -1320,12 +1383,14 @@
         updateUI(); saveGame();
     }
 
+    // 배속 설정 속도 연동
     function toggleAutoBattle() {
         isAutoBattling = !isAutoBattling;
         const btn = document.getElementById("toggle-btn");
         if (isAutoBattling) {
             btn.innerText = "⏸️ 전투 일시정지"; btn.style.background = "#e74c3c";
-            battleInterval = setInterval(battleTurn, 800);
+            const intervalMs = Math.floor(800 / battleSpeed);
+            battleInterval = setInterval(battleTurn, intervalMs);
         } else {
             btn.innerText = "⚔️ 자동 전투 시작"; btn.style.background = "#2ecc71";
             clearInterval(battleInterval);
@@ -1642,6 +1707,8 @@
         document.getElementById("p-shards").innerText = player.shards;
         document.getElementById("p-cubes").innerText = player.cubes;
         document.getElementById("p-rune-cubes").innerText = player.runeCubes;
+        document.getElementById("p-speed-coins").innerText = (player.speedCoins || 0).toLocaleString();
+        document.getElementById("battle-speed-coin-display").innerText = (player.speedCoins || 0).toLocaleString();
         document.getElementById("p-stat-pts").innerText = player.statPts;
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
@@ -1663,7 +1730,6 @@
         document.getElementById("p-max-mp").innerText = getTotalMaxMp().toLocaleString();
         document.getElementById("p-total-gold-bonus").innerText = totalGoldRate;
 
-        // 1. HP / MP / EXP (n / nn) 상세 수치 연동
         const curHp = Math.max(0, player.hp);
         const maxHp = getTotalMaxHp();
         const curMp = Math.max(0, player.mp);
@@ -1712,6 +1778,12 @@
         document.getElementById("rune-bag-cap").innerText = `${player.runeBag.length}/${player.runeBagCap}`;
         const expandCost = 500 + Math.floor((player.runeBagCap - 10) * 150);
         document.getElementById("rune-expand-cost").innerText = expandCost.toLocaleString();
+
+        // 배속 버튼 활성화 상태 표시
+        document.getElementById("btn-speed-1").className = `speed-btn ${battleSpeed === 1 ? 'active' : ''}`;
+        document.getElementById("btn-speed-15").className = `speed-btn ${battleSpeed === 1.5 ? 'active' : ''}`;
+        document.getElementById("btn-speed-2").className = `speed-btn ${battleSpeed === 2 ? 'active' : ''}`;
+        document.getElementById("btn-speed-3").className = `speed-btn ${battleSpeed === 3 ? 'active' : ''}`;
 
         const chapterSelect = document.getElementById("chapter-select");
         chapterSelect.innerHTML = "";
