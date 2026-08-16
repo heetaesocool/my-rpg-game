@@ -229,7 +229,7 @@
     </div>
 </div>
 
-<!-- 3. 스킬 상세 정보 툴팁 모달 -->
+<!-- 스킬 상세 정보 툴팁 모달 -->
 <div id="skill-tooltip">
     <div class="tooltip-header">
         <div id="stt-title" class="tooltip-title" style="color:#f1c40f;">스킬 이름</div>
@@ -284,8 +284,10 @@
                     <small>경험치 (EXP)</small>
                     <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
                 </div>
-                <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>%</div>
+                <!-- 1 & 2. 크리티컬 확률 (최대 100%) 및 골드 획득량 수치 표시 추가 -->
+                <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>% <small style="color:#aaa;">(MAX 100%)</small></div>
                 <div style="font-size: 0.85rem;">🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
+                <div style="font-size: 0.85rem; color:#f1c40f;">💰 총 골드 획득량: +<span id="p-total-gold-bonus">0</span>%</div>
                 <div style="font-size: 0.85rem; color:#e74c3c;">🔥 최고 데미지: <span id="p-max-dmg">0</span></div>
                 <div id="active-buffs-list" style="margin-top: 6px; min-height: 20px;"></div>
                 <div style="margin-top: 8px; font-size: 0.85rem; background: #222; padding: 10px; border-radius: 8px;">
@@ -330,13 +332,10 @@
 
                 <hr style="border-color:#333; margin: 8px 0;">
                 <h3 style="color:#9b59b6; margin-bottom: 6px;">⚡ 하이퍼 스탯</h3>
+                <!-- 1. 하이퍼 스탯 크리티컬 확률 삭제 반영 -->
                 <div class="stat-row">
                     <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
                     <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
-                </div>
-                <div class="stat-row">
-                    <span>💥 크리티컬 확률: +<span id="hstat-crit">0</span>%</span>
-                    <button onclick="addHyperStat('crit')" style="background:#8e44ad;">+1 Pt</button>
                 </div>
                 <div class="stat-row">
                     <span>🔥 크리티컬 데미지: +<span id="hstat-critdmg">0</span>%</span>
@@ -511,7 +510,6 @@
                     <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
                 </h2>
                 
-                <!-- 1. 전투 중 활성화된 버프 실시간 상태 표시 영역 -->
                 <div style="margin-bottom: 8px; background: #181818; padding: 6px 10px; border-radius: 8px; border: 1px dashed #333;">
                     <div style="font-size:0.75rem; color:#f39c12; margin-bottom:4px; font-weight:bold;">⚡ 현재 활성화된 버프 현황:</div>
                     <div id="battle-active-buffs" style="min-height: 22px; display: flex; flex-wrap: wrap; gap: 4px;">
@@ -654,7 +652,7 @@
         { name: "행운", stat: "critChance", baseVal: 0.03, unit: "%", desc: "크리티컬 확률 +" }
     ];
 
-    // 2 & 3. 스킬 가격 비례 MP 소모량 재정립 및 신규 패시브 3종 추가
+    // 3 & 4. 스킬 밸런스 조정 (마력 절약 감축량 최대 50%, 보상 2배 패시브 스킬 신설)
     const skillList = [
         { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 공격하여 강력한 데미지를 줍니다." },
         { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 35, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격으로 높은 데미지를 줍니다." },
@@ -668,11 +666,14 @@
         { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 60, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률을 상승시키는 버프를 겁니다." },
         { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 150, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력을 폭발적으로 상승시킵니다." },
 
-        // 2. 신규 패시브 스킬 추가 (MP증가, MP소모감소, 골드증가)
-        { id: 22, category: "passive", name: "🔮 마력 증폭", statType: "mpPercent", valPerLevel: 0.10, price: 400, costMp: 0, learned: false, level: 0, desc: "상시 최대 MP 수치를 % 비율로 증가시킵니다." },
-        { id: 23, category: "passive", name: "⚡ 마력 절약", statType: "mpCostReduce", valPerLevel: 0.05, price: 1000, costMp: 0, learned: false, level: 0, desc: "스킬 사용 시 소모되는 MP량을 지속적으로 감축시킵니다." },
-        { id: 24, category: "passive", name: "💰 황금의 눈", statType: "goldBonus", valPerLevel: 0.10, price: 700, costMp: 0, learned: false, level: 0, desc: "몬스터 처치 시 획득하는 골드를 대폭 증대시킵니다." },
+        // 3. 마력 절약 (레벨당 2.5%, 최대 50%)
+        { id: 23, category: "passive", name: "⚡ 마력 절약", statType: "mpCostReduce", valPerLevel: 0.025, maxCap: 0.50, price: 1000, costMp: 0, learned: false, level: 0, desc: "스킬 사용 시 소모되는 MP량을 지속적으로 감축시킵니다. (최대 50% 제한)" },
+        
+        // 4. 극희귀 확률 보상 2배 패시브 (레벨당 0.5%, 최대 5.0%)
+        { id: 30, category: "passive", name: "🍀 풍요의 축복", statType: "doubleRewardChance", valPerLevel: 0.005, maxCap: 0.05, price: 3000, costMp: 0, learned: false, level: 0, desc: "몬스터 퇴치 시 보상(골드, EXP 등)을 2배로 획득할 확률이 생깁니다. (최대 5% 제한)" },
 
+        { id: 22, category: "passive", name: "🔮 마력 증폭", statType: "mpPercent", valPerLevel: 0.10, price: 400, costMp: 0, learned: false, level: 0, desc: "상시 최대 MP 수치를 % 비율로 증가시킵니다." },
+        { id: 24, category: "passive", name: "💰 황금의 눈", statType: "goldBonus", valPerLevel: 0.10, price: 700, costMp: 0, learned: false, level: 0, desc: "몬스터 처치 시 획득하는 골드를 대폭 증대시킵니다." },
         { id: 20, category: "passive", name: "🏋️ 단련된 육체", statType: "hpPercent", valPerLevel: 0.08, price: 300, costMp: 0, learned: false, level: 0, desc: "상시 최대 HP를 증대시킵니다." },
         { id: 21, category: "passive", name: "🗡️ 날카로운 칼날", statType: "atkPercent", valPerLevel: 0.05, price: 500, costMp: 0, learned: false, level: 0, desc: "상시 공격력을 증대시킵니다." },
         { id: 25, category: "passive", name: "📖 지식 탐구", statType: "expBonus", valPerLevel: 0.10, price: 600, costMp: 0, learned: false, level: 0, desc: "경험치 획득량을 증대시킵니다." },
@@ -682,12 +683,13 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, costMp: 0, learned: false, level: 0, desc: "전리품 드랍 확률을 증대시킵니다." }
     ];
 
+    // 1. 하이퍼스탯 hyperCrit 프로퍼티 제거
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
         gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0,
         statPts: 0, hyperPts: 0, maxDmg: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
-        hyperDmg: 0, hyperCrit: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0, hyperCube: 0, hyperShard: 0,
+        hyperDmg: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0, hyperCube: 0, hyperShard: 0,
         baseHp: 100, baseMp: 50, baseAtk: 10,
         weapon: { type: "weapon", name: "목검", atk: 5, rarity: "일반", color: "rarity-일반", effects: [], desc: "초보용 나무 칼" },
         armor: { type: "armor", name: "천 옷", hp: 20, rarity: "일반", color: "rarity-일반", effects: [], desc: "가벼운 직물 옷" },
@@ -710,11 +712,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v8", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v9", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v8");
+        const data = localStorage.getItem("tochi_rpg_save_v9");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -864,7 +866,6 @@
 
     function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; activeTooltipItem = null; }
 
-    // 3. 스킬 상세 정보 툴팁 표시 함수
     function showSkillTooltip(event, sk) {
         if (!sk) return;
         if (event) event.stopPropagation();
@@ -901,9 +902,10 @@
                 nextText = `다음 레벨 (+1): 5턴간 크리티컬 확률 +${(val + 3).toFixed(0)}% 상승 (+3%)`;
             }
         } else if (sk.category === "passive") {
-            const val = (sk.valPerLevel * sk.level) * 100;
-            currentText = sk.level > 0 ? `상시 효과 +${val.toFixed(0)}%` : "미습득";
-            nextText = `다음 레벨 (+1): 상시 효과 +${(val + (sk.valPerLevel * 100)).toFixed(0)}% (+${(sk.valPerLevel * 100).toFixed(0)}%)`;
+            const currentVal = Math.min(sk.maxCap || 999, sk.valPerLevel * sk.level) * 100;
+            const nextVal = Math.min(sk.maxCap || 999, sk.valPerLevel * (sk.level + 1)) * 100;
+            currentText = sk.level > 0 ? `상시 효과 +${currentVal.toFixed(1)}%` : "미습득";
+            nextText = `다음 레벨 (+1): 상시 효과 +${nextVal.toFixed(1)}% ${sk.maxCap ? '(최대 ' + (sk.maxCap*100) + '%)' : ''}`;
         }
 
         document.getElementById("stt-current").innerText = `현재 효과: ${currentText}`;
@@ -952,7 +954,15 @@
     function getEffectDescText(eff) { return eff.desc.replace("{chance}", eff.chance).replace("{val}", eff.val || ""); }
 
     function getRuneBonus(statName) { return player.equippedRunes.filter(r => r.stat === statName).reduce((sum, r) => sum + r.val, 0); }
-    function getPassiveBonus(statType) { return skillList.filter(s => s.category === "passive" && s.learned && s.statType === statType).reduce((sum, s) => sum + (s.valPerLevel * s.level), 0); }
+
+    // 3. 패시브 수치 상한 제한(Max Cap) 적용 로직
+    function getPassiveBonus(statType) {
+        const target = skillList.find(s => s.category === "passive" && s.learned && s.statType === statType);
+        if (!target) return 0;
+        const rawVal = target.valPerLevel * target.level;
+        return target.maxCap ? Math.min(target.maxCap, rawVal) : rawVal;
+    }
+
     function getBuffBonus(type) { return player.activeBuffs.reduce((sum, b) => sum + (b[type] || 0), 0); }
 
     function getTotalAtk() {
@@ -960,8 +970,10 @@
         return Math.floor(base * (1 + getPassiveBonus("atkPercent") + getRuneBonus("atkPercent") + getBuffBonus("buffAtkPercent") + (player.hyperDmg * 0.02)));
     }
 
+    // 1. 크리티컬 확률 최대 100% 제한 적용 (하이퍼스탯 제외)
     function getTotalCritChance() {
-        return (5 + (player.dexStat * 0.2) + (player.lukStat * 0.5) + (getRuneBonus("critChance") * 100) + (getBuffBonus("buffCritPercent") * 100) + player.hyperCrit + (getPassiveBonus("critChance") * 100)).toFixed(1);
+        const rawCrit = 5 + (player.dexStat * 0.2) + (player.lukStat * 0.5) + (getRuneBonus("critChance") * 100) + (getBuffBonus("buffCritPercent") * 100) + (getPassiveBonus("critChance") * 100);
+        return Math.min(100, rawCrit).toFixed(1);
     }
 
     function getTotalMaxHp() {
@@ -1135,7 +1147,6 @@
         return player.mp >= neededMp;
     }
 
-    // 1. 전투 턴 처리 중 액티브 및 버프 스킬 시전 로직
     function battleTurn() {
         if (!currentMonster || currentMonster.hp <= 0) {
             currentMonster = spawnMonster();
@@ -1143,7 +1154,6 @@
             return;
         }
 
-        // 버프 지속시간 감소 처리
         player.activeBuffs.forEach(b => b.duration--);
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
@@ -1154,7 +1164,6 @@
         if (learnedCastables.length > 0) {
             const randSkill = learnedCastables[Math.floor(Math.random() * learnedCastables.length)];
             
-            // 2. MP 소모 감소 패시브 효과 적용
             const mpReduce = getPassiveBonus("mpCostReduce");
             const finalCostMp = Math.max(1, Math.floor(randSkill.costMp * (1 - mpReduce)));
 
@@ -1229,13 +1238,21 @@
 
         if (currentMonster.hp <= 0) {
             log(`🟢 <strong>${currentMonster.name}</strong> 처치!`);
+
+            // 4. 보상 2배 패시브 스킬 확률 체크
+            const isDoubleReward = Math.random() < getPassiveBonus("doubleRewardChance");
+            const rewardMult = isDoubleReward ? 2 : 1;
+
+            if (isDoubleReward) {
+                log(`🍀 <span style="color:#00ffff;"><strong>[풍요의 축복 발동!]</strong> 퇴치 보상이 2배로 증가합니다!</span>`);
+            }
+
             const lukGoldBonus = 1 + (player.lukStat * 0.005);
             const hyperGoldBonus = 1 + (player.hyperGold * 0.03);
             
-            // 2. 골드 증가 패시브 연동
-            const earnedGold = Math.floor(currentMonster.goldReward * (1 + getRuneBonus("goldBonus") + getPassiveBonus("goldBonus")) * lukGoldBonus * hyperGoldBonus);
+            const earnedGold = Math.floor(currentMonster.goldReward * (1 + getRuneBonus("goldBonus") + getPassiveBonus("goldBonus")) * lukGoldBonus * hyperGoldBonus * rewardMult);
             player.gold += earnedGold;
-            log(`💰 +${earnedGold.toLocaleString()}G 획득!`);
+            log(`💰 +${earnedGold.toLocaleString()}G 획득! ${rewardMult > 1 ? '(x2배)' : ''}`);
 
             if (currentMonster.type !== "normal" || currentMonster.prefixCount >= 2) {
                 let cubeBaseChance = 0.02 * currentMonster.prefixCount;
@@ -1247,33 +1264,34 @@
 
                 const totalCubeChance = cubeBaseChance + getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01);
                 if (Math.random() < totalCubeChance) {
-                    player.cubes++;
-                    log(`🧊 <span style="color:#00ffff;"><strong>[드랍]</strong></span> 큐브 1개 획득!`);
+                    player.cubes += (1 * rewardMult);
+                    log(`🧊 <span style="color:#00ffff;"><strong>[드랍]</strong></span> 큐브 ${1 * rewardMult}개 획득!`);
                 }
 
                 const totalShardChance = shardBaseChance + getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02);
                 if (Math.random() < totalShardChance) {
-                    const shardQty = (currentMonster.type === "chapterBoss" ? Math.floor(3 + Math.random() * 4) : 1) + Math.floor(getPassiveBonus("shardAmountBonus"));
+                    const shardQty = ((currentMonster.type === "chapterBoss" ? Math.floor(3 + Math.random() * 4) : 1) + Math.floor(getPassiveBonus("shardAmountBonus"))) * rewardMult;
                     player.shards += shardQty;
                     log(`💎 <span style="color:#00ffff;"><strong>[드랍]</strong></span> 룬 파편 +${shardQty}개 획득!`);
                 }
             }
 
             if (Math.random() < 0.02 + (currentMonster.prefixCount * 0.005)) {
-                player.runeCubes++;
-                log(`🔮 <span style="color:#9b59b6;"><strong>[희귀 드랍]</strong></span> 룬의 큐브 1개 획득!`);
+                player.runeCubes += (1 * rewardMult);
+                log(`🔮 <span style="color:#9b59b6;"><strong>[희귀 드랍]</strong></span> 룬의 큐브 ${1 * rewardMult}개 획득!`);
             }
 
             const lootDropChance = 0.15 + getPassiveBonus("lootChanceBonus");
             if (Math.random() < lootDropChance) {
                 const lootName = currentMonster.lootName;
+                const addCount = 1 * rewardMult;
                 player.inventory[lootName] = player.inventory[lootName] ? 
-                    { count: player.inventory[lootName].count + 1, val: currentMonster.lootVal } : 
-                    { count: 1, val: currentMonster.lootVal };
-                log(`📦 <span style="color:#f1c40f;">[전리품 드랍]</span> ${lootName} 수집!`);
+                    { count: player.inventory[lootName].count + addCount, val: currentMonster.lootVal } : 
+                    { count: addCount, val: currentMonster.lootVal };
+                log(`📦 <span style="color:#f1c40f;">[전리품 드랍]</span> ${lootName} x${addCount} 수집!`);
             }
 
-            gainExp(Math.floor(currentMonster.expReward * (1 + getPassiveBonus("expBonus"))));
+            gainExp(Math.floor(currentMonster.expReward * (1 + getPassiveBonus("expBonus")) * rewardMult));
 
             if (stage === maxStage) { stage++; maxStage++; }
             currentMonster = null;
@@ -1589,7 +1607,6 @@
         document.getElementById("mp-potions-summary").innerText = mpSum;
     }
 
-    // 1. 활성화된 버프 현황 UI 렌더링
     function renderActiveBuffsUI() {
         const statusContainer = document.getElementById("active-buffs-list");
         const battleContainer = document.getElementById("battle-active-buffs");
@@ -1624,7 +1641,9 @@
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
 
-        const totalGoldRate = ((getRuneBonus("goldBonus") + getPassiveBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100).toFixed(1);
+        // 2. 총 골드 획득량 합산 수치 계산
+        const totalGoldRateVal = (getRuneBonus("goldBonus") + getPassiveBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100;
+        const totalGoldRate = totalGoldRateVal.toFixed(1);
         const totalCubeRate = ((getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01)) * 100).toFixed(1);
         const totalShardRate = ((getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02)) * 100).toFixed(1);
         const totalLootRate = ((0.15 + getPassiveBonus("lootChanceBonus")) * 100).toFixed(1);
@@ -1638,6 +1657,7 @@
         document.getElementById("p-crit").innerText = getTotalCritChance();
         document.getElementById("p-max-hp").innerText = getTotalMaxHp().toLocaleString();
         document.getElementById("p-max-mp").innerText = getTotalMaxMp().toLocaleString();
+        document.getElementById("p-total-gold-bonus").innerText = totalGoldRate;
 
         const w = document.getElementById("p-weapon");
         w.innerText = `${player.weapon.name} (+${player.weapon.atk})`;
@@ -1668,8 +1688,8 @@
         document.getElementById("stat-int").innerText = player.intStat;
         document.getElementById("stat-luk").innerText = player.lukStat;
 
+        // 1. 하이퍼 스탯 크리티컬 확률 엘리먼트 갱신 제거
         document.getElementById("hstat-dmg").innerText = player.hyperDmg * 2;
-        document.getElementById("hstat-crit").innerText = player.hyperCrit * 1;
         document.getElementById("hstat-critdmg").innerText = player.hyperCritDmg * 3;
         document.getElementById("hstat-gold").innerText = player.hyperGold * 3;
         document.getElementById("hstat-boss").innerText = player.hyperBoss * 4;
@@ -1713,7 +1733,6 @@
         renderLootInventory();
     }
 
-    // 3. 스킬 상점 및 툴팁 바인딩
     function renderSkillShop() {
         const container = document.getElementById("skill-shop-list");
         container.innerHTML = "";
@@ -1737,7 +1756,6 @@
         });
     }
 
-    // 3. 스킬 강화 및 툴팁 바인딩
     function renderSkillUpgrades() {
         const container = document.getElementById("skill-upgrade-list");
         container.innerHTML = "";
