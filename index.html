@@ -206,6 +206,7 @@
 
         .rarity-guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 0.75rem; margin-top: 6px; }
         .rarity-guide-card { background: #181818; padding: 6px; border-radius: 6px; border: 1px solid #333; }
+        .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
     </style>
 </head>
 <body class="mobile-mode">
@@ -247,7 +248,7 @@
                     <strong id="p-name" style="color: #f1c40f; font-size: 1.05rem;">지존용사</strong> (Lv.<span id="p-level">1</span>)
                 </div>
                 <div>💰 <strong>골드:</strong> <span id="p-gold">200</span>G | 💎 <strong>룬 파편:</strong> <span id="p-shards">0</span>개</div>
-                <div>🧊 <strong>큐브:</strong> <span id="p-cubes" style="color:#00ffff; font-weight:bold;">0</span>개</div>
+                <div>🧊 <strong>큐브:</strong> <span id="p-cubes" style="color:#00ffff; font-weight:bold;">0</span>개 | 🔮 <strong>룬의 큐브:</strong> <span id="p-rune-cubes" style="color:#9b59b6; font-weight:bold;">0</span>개</div>
                 
                 <!-- 지표 정보 -->
                 <div style="margin-top: 6px; padding: 6px 8px; background: #181818; border-radius: 6px; font-size: 0.78rem; color: #f39c12; border: 1px dashed #444;">
@@ -272,9 +273,14 @@
                     🛡️ 방어구: <span id="p-armor" class="item-hover" onclick="showTooltip(event, player.armor)">천 옷 (+20)</span><br>
                     🔮 보조장비: <span id="p-subweapon" class="item-hover" onclick="showTooltip(event, player.subWeapon)">낡은 부적</span>
                 </div>
-                <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                    <button onclick="usePotion('hp')" style="background: #c0392b; width: 100%;">❤️ HP 포션 (<span id="p-potions">2</span>)</button>
-                    <button onclick="usePotion('mp')" style="background: #2980b9; width: 100%;">🧪 MP 포션 (<span id="p-mp-potions">2</span>)</button>
+                
+                <!-- 5. 다양화된 포션 목록 UI -->
+                <div style="margin-top: 8px;">
+                    <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">❤️ HP 포션 보유 현황</div>
+                    <div id="hp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
+                    <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">🧪 MP 포션 보유 현황 (자동 사용 설정됨)</div>
+                    <div id="mp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
+                    <button onclick="useHighestHpPotion()" style="background: #c0392b; width: 100%;">❤️ 최고등급 HP 포션 즉시 사용</button>
                 </div>
             </div>
 
@@ -365,19 +371,48 @@
                 </div>
             </div>
 
+            <!-- 1 & 3 & 4. 룬 소켓 등급 및 룬의 큐브 옵션 돌리기 추가 -->
             <div class="card">
-                <h2>🔮 룬 소켓 & 가방 시스템</h2>
+                <h2>🔮 룬 소켓 & 룬의 큐브 시스템</h2>
+                
+                <!-- 룬 소켓 등급 상태 및 승급 UI -->
+                <div style="background:#151515; border:1px solid #333; padding:8px; border-radius:6px; margin-bottom:8px; font-size:0.85rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>소켓 등급: <strong id="socket-rarity-display" class="rarity-일반">[일반]</strong></span>
+                        <span>최대 착용: <strong id="socket-max-slots" style="color:#00ffff;">1개</strong></span>
+                    </div>
+                    <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; color:#aaa;">승급 필요 룬 파편: <span id="socket-upgrade-cost">100</span>개</span>
+                        <button onclick="upgradeRuneSocket()" style="padding:2px 8px; font-size:0.75rem; background:#8e44ad; min-height:28px;">⬆️ 소켓 승급</button>
+                    </div>
+                </div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85rem;">
                     <span>룬 가방 용량: <strong id="rune-bag-cap" style="color:#f1c40f;">0/10</strong></span>
                     <button onclick="expandRuneBag()" style="background:#27ae60; padding:2px 8px; font-size:0.75rem; min-height:28px;">➕ 가방 확장 (<span id="rune-expand-cost">500</span>G)</button>
                 </div>
                 <button onclick="buyRune()" style="background:#9b59b6; width: 100%; margin-bottom: 8px;">🎲 룬 뽑기 (💎 50 파편)</button>
                 
-                <h3 style="margin-top:10px;">🛡️ 장착 중인 룬 (최대 3개)</h3>
+                <h3 style="margin-top:10px;">🛡️ 장착 중인 룬 (<span id="equipped-rune-count">0</span>/<span id="equipped-rune-max">1</span>)</h3>
                 <div id="equipped-runes-list" style="margin-bottom:10px;"></div>
 
-                <h3>🎒 보관 중인 룬 가방</h3>
+                <h3>🎒 보관 중인 룬 가방 (🔮 룬의 큐브로 옵션 변경 가능)</h3>
                 <div id="inventory-runes-list"></div>
+
+                <!-- 3. 룬 소켓 등급 및 능력치 가이드 추가 -->
+                <div style="margin-top: 12px; border-top: 1px solid #333; padding-top: 8px; font-size:0.75rem; color:#ccc;">
+                    <strong style="color:#f1c40f;">📖 룬 소켓 등급별 혜택 가이드</strong>
+                    <div class="rarity-guide-grid">
+                        <div class="rarity-guide-card"><span class="rarity-일반">일반</span>: 착용 1개 (승급 100)</div>
+                        <div class="rarity-guide-card"><span class="rarity-고급">고급</span>: 착용 2개 (승급 300)</div>
+                        <div class="rarity-guide-card"><span class="rarity-희귀">희귀</span>: 착용 3개 (승급 600)</div>
+                        <div class="rarity-guide-card"><span class="rarity-영웅">영웅</span>: 착용 4개 (승급 1200)</div>
+                        <div class="rarity-guide-card"><span class="rarity-전설">전설</span>: 착용 5개 (승급 2500)</div>
+                        <div class="rarity-guide-card"><span class="rarity-신화">신화</span>: 착용 6개 (승급 5000)</div>
+                        <div class="rarity-guide-card"><span class="rarity-초월">초월</span>: 착용 7개 (승급 10000)</div>
+                        <div class="rarity-guide-card"><span class="rarity-신성">신성</span>: 착용 8개 (최대 등급)</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -400,32 +435,17 @@
                             </div>
                         </div>
 
-                        <h3>🎲 장비 및 포션 구매</h3>
+                        <h3>🎲 장비 구매</h3>
                         <button onclick="buyRandomItem('weapon')" style="background:#e67e22; width: 100%; margin-bottom: 6px;">🗡️ 랜덤 무기 (<span id="cost-weapon">100</span>G)</button>
                         <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 6px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
-                        <!-- 4. 보조무기 공격력 옵션 삭제 적용 -->
                         <button onclick="buyRandomItem('subWeapon')" style="background:#8e44ad; width: 100%; margin-bottom: 10px;">🔮 랜덤 보조장비 (<span id="cost-subWeapon">100</span>G)</button>
                         
-                        <div class="shop-item">
-                            <div>
-                                <span>❤️ HP 포션 (30G)</span><br>
-                                <small style="color:#aaa;">HP 120 회복</small>
-                            </div>
-                            <div>
-                                <button onclick="buyPotionBulk('hp', 1)" style="background:#27ae60; min-height: 30px; padding: 2px 8px;">1개</button>
-                                <button onclick="buyPotionBulk('hp', 5)" style="background:#27ae60; min-height: 30px; padding: 2px 8px;">5개</button>
-                            </div>
-                        </div>
-                        <div class="shop-item">
-                            <div>
-                                <span>🧪 MP 포션 (30G)</span><br>
-                                <small style="color:#aaa;">MP 80 회복</small>
-                            </div>
-                            <div>
-                                <button onclick="buyPotionBulk('mp', 1)" style="background:#2980b9; min-height: 30px; padding: 2px 8px;">1개</button>
-                                <button onclick="buyPotionBulk('mp', 5)" style="background:#2980b9; min-height: 30px; padding: 2px 8px;">5개</button>
-                            </div>
-                        </div>
+                        <!-- 5. 6단계 세분화된 포션 상점 -->
+                        <h3>❤️ HP 포션 상점</h3>
+                        <div id="hp-potion-shop" class="potion-grid"></div>
+
+                        <h3>🧪 MP 포션 상점 (자동 사용)</h3>
+                        <div id="mp-potion-shop" class="potion-grid"></div>
                     </div>
 
                     <div>
@@ -451,9 +471,8 @@
                         <div class="rarity-guide-card"><span class="rarity-신성">신성</span>: 옵션 5개 (큐브 8개 소모)</div>
                     </div>
 
-                    <!-- 6. 보조옵션 최소/최대 가이드 추가 -->
                     <div style="margin-top: 8px; background: #151515; padding: 8px; border-radius: 6px; font-size: 0.75rem; color: #ccc;">
-                        <strong style="color: #00ffff;">⚡ 보조 옵션 종류 및 등급별 능력 범위 (1/3 너프 적용):</strong><br>
+                        <strong style="color: #00ffff;">⚡ 보조 옵션 종류 및 등급별 능력 범위:</strong><br>
                         • 💀 <strong>즉사</strong>: 일반 0% ~ 신성 2%~3% (공격 시 확률 즉사)<br>
                         • 🩸 <strong>흡혈</strong>: 일반 0% ~ 신성 10%~16% 확률 / 피해의 10%~13% 회복<br>
                         • ⚡ <strong>더블 어택</strong>: 일반 0% ~ 신성 10%~13% (공격 시 2배 데미지)<br>
@@ -522,24 +541,34 @@
         { name: "서큐버스", loot: "악마의 날개", val: 120 }
     ];
 
-    const monsterPrefixes = [
-        { name: "", hpMult: 1.0, atkMult: 1.0, defMult: 1.0, type: "normal" },
-        { name: "단단한", hpMult: 1.5, atkMult: 1.2, defMult: 1.5, type: "normal" },
-        { name: "광폭한", hpMult: 1.3, atkMult: 1.6, defMult: 1.1, type: "normal" },
-        { name: "👑 [엘리트]", hpMult: 2.5, atkMult: 2.0, defMult: 2.0, type: "elite" },
-        { name: "🔥 [네임드]", hpMult: 3.2, atkMult: 2.4, defMult: 2.2, type: "named" }
+    // 2. 확장된 20개 이상의 풍성한 접두사 데이터
+    const monsterPrefixPool = [
+        { name: "단단한", hpMult: 1.3, atkMult: 1.1, defMult: 1.3 },
+        { name: "광폭한", hpMult: 1.1, atkMult: 1.4, defMult: 1.0 },
+        { name: "신속한", hpMult: 1.0, atkMult: 1.2, defMult: 1.1 },
+        { name: "흡혈의", hpMult: 1.2, atkMult: 1.2, defMult: 1.2 },
+        { name: "치명적인", hpMult: 1.1, atkMult: 1.5, defMult: 1.0 },
+        { name: "요새의", hpMult: 1.6, atkMult: 1.0, defMult: 1.6 },
+        { name: "맹독의", hpMult: 1.2, atkMult: 1.3, defMult: 1.1 },
+        { name: "불타는", hpMult: 1.2, atkMult: 1.35, defMult: 1.0 },
+        { name: "얼어붙은", hpMult: 1.4, atkMult: 1.1, defMult: 1.2 },
+        { name: "번개의", hpMult: 1.0, atkMult: 1.45, defMult: 1.0 },
+        { name: "환영의", hpMult: 1.1, atkMult: 1.2, defMult: 1.4 },
+        { name: "파멸의", hpMult: 1.5, atkMult: 1.5, defMult: 1.3 },
+        { name: "태고의", hpMult: 1.7, atkMult: 1.4, defMult: 1.5 },
+        { name: "절망의", hpMult: 1.4, atkMult: 1.6, defMult: 1.2 },
+        { name: "👑 [엘리트]", hpMult: 2.0, atkMult: 1.8, defMult: 1.8 },
+        { name: "🔥 [네임드]", hpMult: 2.5, atkMult: 2.0, defMult: 2.0 },
+        { name: "☠️ [악몽의]", hpMult: 2.2, atkMult: 2.2, defMult: 1.5 },
+        { name: "🌌 [신성한]", hpMult: 2.8, atkMult: 1.7, defMult: 2.5 },
+        { name: "⚔️ [학살자]", hpMult: 1.8, atkMult: 2.5, defMult: 1.4 },
+        { name: "🔮 [마도적]", hpMult: 1.5, atkMult: 2.0, defMult: 1.8 }
     ];
 
     const chapterNames = [
-        "1장: 초심자의 울창한 숲",
-        "2장: 버려진 오크 마왕성 입구",
-        "3장: 음산한 어둠의 통곡 심연",
-        "4장: 불타는 용의 고대 둥지",
-        "5장: 멈춘 시계탑 최하층 잔해",
-        "6장: 신성한 시간의 신전 회랑",
-        "7장: 세계수 상층부 하늘길",
-        "8장: 붉은 차원의 일그러진 균열",
-        "9장: 타락한 신들의 정원",
+        "1장: 초심자의 울창한 숲", "2장: 버려진 오크 마왕성 입구", "3장: 음산한 어둠의 통곡 심연",
+        "4장: 불타는 용의 고대 둥지", "5장: 멈춘 시계탑 최하층 잔해", "6장: 신성한 시간의 신전 회랑",
+        "7장: 세계수 상층부 하늘길", "8장: 붉은 차원의 일그러진 균열", "9장: 타락한 신들의 정원",
         "10장: 최후의 전장: 종말의 종착지"
     ];
 
@@ -554,17 +583,17 @@
         { name: "검은 마법사", loot: "창세의 알", val: 20000, skillName: "🌌 파괴와 창조의 권능" }
     ];
 
-    // 2. 등급별 큐브 소모량 차등 지정 (cubeCost)
+    // 1 & 4. 8가지 룬 소켓 등급 및 룬의 큐브 소모량 (runeCubeCost)
     const itemData = {
         rarities: [
-            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1, cubeCost: 1 },
-            { name: "고급", mult: 1.3, color: "rarity-고급", chance: 0.25, effectCount: 1, cubeCost: 1 },
-            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 2, cubeCost: 2 },
-            { name: "영웅", mult: 2.3, color: "rarity-영웅", chance: 0.11, effectCount: 2, cubeCost: 3 },
-            { name: "전설", mult: 3.2, color: "rarity-전설", chance: 0.06, effectCount: 3, cubeCost: 4 },
-            { name: "신화", mult: 4.5, color: "rarity-신화", chance: 0.03, effectCount: 3, cubeCost: 5 },
-            { name: "초월", mult: 6.0, color: "rarity-초월", chance: 0.015, effectCount: 4, cubeCost: 6 },
-            { name: "신성", mult: 8.5, color: "rarity-신성", chance: 0.005, effectCount: 5, cubeCost: 8 }
+            { name: "일반", mult: 1.0, color: "rarity-일반", chance: 0.35, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 1, upgradeShardCost: 100 },
+            { name: "고급", mult: 1.3, color: "rarity-고급", chance: 0.25, effectCount: 1, cubeCost: 1, runeCubeCost: 1, maxRuneSlots: 2, upgradeShardCost: 300 },
+            { name: "희귀", mult: 1.7, color: "rarity-희귀", chance: 0.18, effectCount: 2, cubeCost: 2, runeCubeCost: 2, maxRuneSlots: 3, upgradeShardCost: 600 },
+            { name: "영웅", mult: 2.3, color: "rarity-영웅", chance: 0.11, effectCount: 2, cubeCost: 3, runeCubeCost: 3, maxRuneSlots: 4, upgradeShardCost: 1200 },
+            { name: "전설", mult: 3.2, color: "rarity-전설", chance: 0.06, effectCount: 3, cubeCost: 4, runeCubeCost: 4, maxRuneSlots: 5, upgradeShardCost: 2500 },
+            { name: "신화", mult: 4.5, color: "rarity-신화", chance: 0.03, effectCount: 3, cubeCost: 5, runeCubeCost: 5, maxRuneSlots: 6, upgradeShardCost: 5000 },
+            { name: "초월", mult: 6.0, color: "rarity-초월", chance: 0.015, effectCount: 4, cubeCost: 6, runeCubeCost: 6, maxRuneSlots: 7, upgradeShardCost: 10000 },
+            { name: "신성", mult: 8.5, color: "rarity-신성", chance: 0.005, effectCount: 5, cubeCost: 8, runeCubeCost: 8, maxRuneSlots: 8, upgradeShardCost: 0 }
         ],
         weaponBases: ["단검", "장검", "메이스", "대검", "배틀액스", "창", "지팡이"],
         armorBases: ["천 옷", "가죽 갑옷", "사슬 갑옷", "플레이트 아머", "용비늘 갑옷"],
@@ -573,46 +602,21 @@
         suffixes: ["강철", "파멸", "보석", "용기", "질풍", "분노", "제왕"]
     };
 
-    // 5. 보조 옵션 스킬 수치 1/3 너프 반영 (tierStats 값 축소)
+    // 5. 6단계 체계적인 포션 정의 (소, 중, 대, 특대, 특특대, 퍼펙트)
+    const potionTypes = [
+        { id: "p1", name: "소형", heal: 80, price: 20 },
+        { id: "p2", name: "중형", heal: 250, price: 70 },
+        { id: "p3", name: "대형", heal: 700, price: 200 },
+        { id: "p4", name: "특대형", heal: 1800, price: 550 },
+        { id: "p5", name: "특특대형", heal: 4500, price: 1400 },
+        { id: "p6", name: "퍼펙트", heal: 12000, price: 3800 }
+    ];
+
     const specialEffectsPool = [
-        { 
-            id: "INSTANT_KILL", name: "💀 즉사", type: "chance", 
-            tierStats: [
-                { minC: 0, maxC: 0 }, { minC: 0, maxC: 1 }, { minC: 0, maxC: 1 },
-                { minC: 1, maxC: 1 }, { minC: 1, maxC: 2 }, { minC: 1, maxC: 2 },
-                { minC: 2, maxC: 3 }, { minC: 2, maxC: 3 }
-            ],
-            desc: "공격 시 {chance}% 확률로 몬스터 즉사" 
-        },
-        { 
-            id: "LIFE_STEAL", name: "🩸 흡혈", type: "lifesteal", 
-            tierStats: [
-                { minC: 0, maxC: 0, minV: 0, maxV: 0 }, { minC: 2, maxC: 3, minV: 2, maxV: 3 },
-                { minC: 3, maxC: 5, minV: 3, maxV: 5 }, { minC: 4, maxC: 7, minV: 4, maxV: 7 },
-                { minC: 5, maxC: 8, minV: 5, maxV: 8 }, { minC: 7, maxC: 10, minV: 7, maxV: 10 },
-                { minC: 8, maxC: 13, minV: 8, maxV: 12 }, { minC: 10, maxC: 16, minV: 10, maxV: 13 }
-            ],
-            desc: "공격 시 {chance}% 확률로 준 피해의 {val}% HP 회복" 
-        },
-        { 
-            id: "DOUBLE_ATTACK", name: "⚡ 더블 어택", type: "chance", 
-            tierStats: [
-                { minC: 0, maxC: 0 }, { minC: 2, maxC: 3 }, { minC: 3, maxC: 4 },
-                { minC: 3, maxC: 6 }, { minC: 5, maxC: 7 }, { minC: 7, maxC: 9 },
-                { minC: 8, maxC: 11 }, { minC: 10, maxC: 13 }
-            ],
-            desc: "공격 시 {chance}% 확률로 2배 데미지" 
-        },
-        { 
-            id: "MP_RECOVER", name: "🔮 마나 샘", type: "mprecover", 
-            tierStats: [
-                { minC: 0, maxC: 0, minV: 0, maxV: 0 }, { minC: 2, maxC: 3, minV: 2, maxV: 5 },
-                { minC: 3, maxC: 5, minV: 3, maxV: 8 }, { minC: 4, maxC: 7, minV: 5, maxV: 12 },
-                { minC: 5, maxC: 8, minV: 8, maxV: 17 }, { minC: 7, maxC: 10, minV: 12, maxV: 22 },
-                { minC: 8, maxC: 13, minV: 15, maxV: 27 }, { minC: 10, maxC: 16, minV: 20, maxV: 33 }
-            ],
-            desc: "공격 시 {chance}% 확률로 MP {val} 회복" 
-        }
+        { id: "INSTANT_KILL", name: "💀 즉사", type: "chance", tierStats: [{minC:0,maxC:0},{minC:0,maxC:1},{minC:0,maxC:1},{minC:1,maxC:1},{minC:1,maxC:2},{minC:1,maxC:2},{minC:2,maxC:3},{minC:2,maxC:3}], desc: "공격 시 {chance}% 확률로 몬스터 즉사" },
+        { id: "LIFE_STEAL", name: "🩸 흡혈", type: "lifesteal", tierStats: [{minC:0,maxC:0,minV:0,maxV:0},{minC:2,maxC:3,minV:2,maxV:3},{minC:3,maxC:5,minV:3,maxV:5},{minC:4,maxC:7,minV:4,maxV:7},{minC:5,maxC:8,minV:5,maxV:8},{minC:7,maxC:10,minV:7,maxV:10},{minC:8,maxC:13,minV:8,maxV:12},{minC:10,maxC:16,minV:10,maxV:13}], desc: "공격 시 {chance}% 확률로 준 피해의 {val}% HP 회복" },
+        { id: "DOUBLE_ATTACK", name: "⚡ 더블 어택", type: "chance", tierStats: [{minC:0,maxC:0},{minC:2,maxC:3},{minC:3,maxC:4},{minC:3,maxC:6},{minC:5,maxC:7},{minC:7,maxC:9},{minC:8,maxC:11},{minC:10,maxC:13}], desc: "공격 시 {chance}% 확률로 2배 데미지" },
+        { id: "MP_RECOVER", name: "🔮 마나 샘", type: "mprecover", tierStats: [{minC:0,maxC:0,minV:0,maxV:0},{minC:2,maxC:3,minV:2,maxV:5},{minC:3,maxC:5,minV:3,maxV:8},{minC:4,maxC:7,minV:5,maxV:12},{minC:5,maxC:8,minV:8,maxV:17},{minC:7,maxC:10,minV:12,maxV:22},{minC:8,maxC:13,minV:15,maxV:27},{minC:10,maxC:16,minV:20,maxV:33}], desc: "공격 시 {chance}% 확률로 MP {val} 회복" }
     ];
 
     const runeTypes = [
@@ -646,17 +650,20 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, learned: false, level: 0, desc: "전리품 드랍 확률 증가" }
     ];
 
-    // 3. 룬 가방 용량 데이터 추가 (최초 10개 시작)
+    // 1 & 4 & 5. 룬의 큐브, 소켓 등급Index, 세분화된 포션 가방 적용
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
-        gold: 200, shards: 0, cubes: 0, statPts: 0, hyperPts: 0, maxDmg: 0,
+        gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0, // 0: 일반 ~ 7: 신성
+        statPts: 0, hyperPts: 0, maxDmg: 0,
         strStat: 0, dexStat: 0, intStat: 0, lukStat: 0,
         hyperDmg: 0, hyperCrit: 0, hyperCritDmg: 0, hyperGold: 0, hyperBoss: 0, hyperCube: 0, hyperShard: 0,
         baseHp: 100, baseMp: 50, baseAtk: 10,
         weapon: { type: "weapon", name: "목검", atk: 5, rarity: "일반", color: "rarity-일반", effects: [], desc: "초보용 나무 칼" },
         armor: { type: "armor", name: "천 옷", hp: 20, rarity: "일반", color: "rarity-일반", effects: [], desc: "가벼운 직물 옷" },
         subWeapon: { type: "subWeapon", name: "낡은 부적", atk: 0, rarity: "일반", color: "rarity-일반", effects: [], desc: "낡았지만 기운이 담긴 부적" },
-        potions: 2, mpPotions: 2, hp: 120, mp: 50,
+        hpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
+        mpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
+        hp: 120, mp: 50,
         equippedRunes: [], runeBag: [], runeBagCap: 10, activeBuffs: [], inventory: {}
     };
 
@@ -671,11 +678,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v5", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v6", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v5");
+        const data = localStorage.getItem("tochi_rpg_save_v6");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -684,6 +691,10 @@
                 maxStage = parsed.maxStage || 1;
                 if (!player.runeBag) player.runeBag = [];
                 if (!player.runeBagCap) player.runeBagCap = 10;
+                if (player.socketRarityIdx === undefined) player.socketRarityIdx = 0;
+                if (!player.runeCubes) player.runeCubes = 0;
+                if (!player.hpPotions) player.hpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
+                if (!player.mpPotions) player.mpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (parsed.skillList) {
                     parsed.skillList.forEach(s => {
                         const target = skillList.find(x => x.id === s.id);
@@ -798,7 +809,6 @@
         document.getElementById("tt-rarity").innerText = `[${item.rarity || '일반'} 등급]`;
         document.getElementById("tt-rarity").className = `tooltip-rarity ${item.color || ''}`;
         
-        // 4. 보조무기는 기본 공격력이 표시되지 않음
         if (item.type === "weapon") document.getElementById("tt-stat").innerText = `⚔️ 공격력 +${item.atk||0}`;
         else if (item.type === "armor") document.getElementById("tt-stat").innerText = `🛡️ 체력 +${item.hp||0}`;
         else document.getElementById("tt-stat").innerText = `🔮 보조 옵션 장비`;
@@ -821,7 +831,6 @@
 
     function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; activeTooltipItem = null; }
 
-    // 1 & 2. 옵션 중복 등장 방지 및 등급별 큐브 소모량 차등화
     function useCubeOnOption(optIdx) {
         if (!activeTooltipItem || !activeTooltipItem.effects[optIdx]) return;
 
@@ -836,7 +845,6 @@
         player.cubes -= reqCubes;
         const rarityIdx = itemData.rarities.findIndex(r => r.name === activeTooltipItem.rarity);
         
-        // 1. 이미 존재하는 옵션 ID 목록 수집하여 중복 방지
         const existingEffIds = activeTooltipItem.effects.map((e, idx) => idx !== optIdx ? e.id : null).filter(Boolean);
         const availablePool = specialEffectsPool.filter(p => !existingEffIds.includes(p.id));
 
@@ -863,7 +871,6 @@
     function getPassiveBonus(statType) { return skillList.filter(s => s.category === "passive" && s.learned && s.statType === statType).reduce((sum, s) => sum + (s.valPerLevel * s.level), 0); }
     function getBuffBonus(type) { return player.activeBuffs.reduce((sum, b) => sum + (b[type] || 0), 0); }
 
-    // 4. 보조무기는 기본 공격력이 적용되지 않음
     function getTotalAtk() {
         const base = player.baseAtk + (player.strStat * 4) + (player.dexStat * 2) + player.weapon.atk;
         return Math.floor(base * (1 + getPassiveBonus("atkPercent") + getRuneBonus("atkPercent") + getBuffBonus("buffAtkPercent") + (player.hyperDmg * 0.02)));
@@ -920,7 +927,6 @@
         updateUI(); saveGame();
     }
 
-    // 1 & 4. 보조 옵션 중복 부여 방지 및 보조 무기 공격력 제거
     function generateRandomItem(type) {
         const rand = Math.random();
         let cum = 0; let selectedRarityIdx = 0;
@@ -932,7 +938,6 @@
         const pre = itemData.prefixes[Math.floor(Math.random() * itemData.prefixes.length)];
         const suf = itemData.suffixes[Math.floor(Math.random() * itemData.suffixes.length)];
         
-        // 1. 중복되지 않는 옵션 뽑기
         const activeEffects = [];
         const poolCopy = [...specialEffectsPool].sort(() => 0.5 - Math.random());
         const count = Math.min(selectedRarity.effectCount, poolCopy.length);
@@ -950,7 +955,6 @@
         const fullName = `[${selectedRarity.name}] ${pre} ${base} of ${suf}`;
         const baseVal = 5 + (stage * 12);
         
-        // 4. 보조 무기는 공격력 0 고정
         const finalStat = type === 'subWeapon' ? 0 : Math.floor(baseVal * selectedRarity.mult * (0.8 + Math.random() * 0.4));
 
         return { type, name: fullName, [type === 'armor' ? 'hp' : 'atk']: finalStat, rarity: selectedRarity.name, color: selectedRarity.color, effects: activeEffects, desc: `${selectedRarity.name} 등급` };
@@ -970,49 +974,85 @@
         updateUI(); saveGame();
     }
 
+    // 2. 최대 4개 중첩 접두사 생성 및 능력치/보상 배율 적용
     function spawnMonster() {
         const isChapterBoss = stage % 10 === 0;
+        
+        // 접두사 1~4개 난수 생성
+        const prefixCount = Math.floor(Math.random() * 4) + 1; // 1~4
+        const chosenPrefixes = [];
+        let combinedHpMult = 1.0;
+        let combinedAtkMult = 1.0;
+        let combinedDefMult = 1.0;
+
+        const poolCopy = [...monsterPrefixPool].sort(() => 0.5 - Math.random());
+        for (let i = 0; i < prefixCount; i++) {
+            const p = poolCopy[i];
+            chosenPrefixes.push(p.name);
+            combinedHpMult *= p.hpMult;
+            combinedAtkMult *= p.atkMult;
+            combinedDefMult *= p.defMult;
+        }
+
+        const prefixTitle = chosenPrefixes.join(" ");
+
         if (isChapterBoss) {
             const bossIndex = Math.min(Math.floor((stage / 10) - 1), mapleBosses.length - 1);
             const bossData = mapleBosses[bossIndex];
             return {
-                name: `🔥 [챕터 최종 보스] ${bossData.name}`,
+                name: `🔥 ${prefixTitle} [보스] ${bossData.name}`,
                 type: "chapterBoss",
-                hp: Math.floor((150 + Math.pow(stage, 2.2) * 20)),
-                maxHp: Math.floor((150 + Math.pow(stage, 2.2) * 20)),
-                atk: Math.floor(15 + Math.pow(stage, 1.5) * 5),
-                def: Math.floor(stage * 4),
+                prefixCount: prefixCount,
+                hp: Math.floor((150 + Math.pow(stage, 2.2) * 20) * combinedHpMult),
+                maxHp: Math.floor((150 + Math.pow(stage, 2.2) * 20) * combinedHpMult),
+                atk: Math.floor((15 + Math.pow(stage, 1.5) * 5) * combinedAtkMult),
+                def: Math.floor((stage * 4) * combinedDefMult),
                 skillName: bossData.skillName,
-                expReward: Math.floor((100 + (stage * 40)) * 3.0),
-                goldReward: Math.floor((200 + (stage * 60)) * 3.0),
+                expReward: Math.floor((100 + (stage * 40)) * 3.0 * (1 + prefixCount * 0.5)),
+                goldReward: Math.floor((200 + (stage * 60)) * 3.0 * (1 + prefixCount * 0.5)),
                 lootName: bossData.loot,
-                lootVal: bossData.val
+                lootVal: bossData.val * prefixCount
             };
         }
 
-        const prefix = monsterPrefixes[Math.floor(Math.random() * monsterPrefixes.length)];
         const base = randomMonsterPool[Math.floor(Math.random() * randomMonsterPool.length)];
-        let fullName = prefix.name !== "" ? `${prefix.name} ${base.name}` : base.name;
-
         return {
-            name: fullName,
-            type: prefix.type,
-            hp: Math.floor((40 + Math.pow(stage, 1.9) * 12) * prefix.hpMult),
-            maxHp: Math.floor((40 + Math.pow(stage, 1.9) * 12) * prefix.hpMult),
-            atk: Math.floor((8 + Math.pow(stage, 1.35) * 3) * prefix.atkMult),
-            def: Math.floor((stage * 2) * prefix.defMult),
-            skillName: prefix.type === "elite" ? "💥 엘리트 격돌" : prefix.type === "named" ? "🔥 강렬한 강타" : null,
-            expReward: Math.floor((30 + (stage * 15)) * (prefix.type !== 'normal' ? 1.8 : 1.0)),
-            goldReward: Math.floor((25 + (stage * 20)) * (prefix.type !== 'normal' ? 2.0 : 1.0)),
+            name: `${prefixTitle} ${base.name}`,
+            type: prefixCount >= 3 ? "elite" : "normal",
+            prefixCount: prefixCount,
+            hp: Math.floor((40 + Math.pow(stage, 1.9) * 12) * combinedHpMult),
+            maxHp: Math.floor((40 + Math.pow(stage, 1.9) * 12) * combinedHpMult),
+            atk: Math.floor((8 + Math.pow(stage, 1.35) * 3) * combinedAtkMult),
+            def: Math.floor((stage * 2) * combinedDefMult),
+            skillName: prefixCount >= 3 ? "💥 엘리트 파동 공격" : null,
+            expReward: Math.floor((30 + (stage * 15)) * prefixCount),
+            goldReward: Math.floor((25 + (stage * 20)) * prefixCount),
             lootName: `${base.name}의 파편`,
-            lootVal: Math.floor(base.val * (prefix.type !== 'normal' ? 2.0 : 1.0))
+            lootVal: Math.floor(base.val * prefixCount)
         };
+    }
+
+    // 6. 자동 MP 포션 사용 함수
+    function autoUseMpPotionIfNeeded(neededMp) {
+        if (player.mp >= neededMp) return true;
+        
+        // 높은 등급 포션부터 탐색하여 사용
+        for (let i = potionTypes.length - 1; i >= 0; i--) {
+            const p = potionTypes[i];
+            if (player.mpPotions[p.id] > 0) {
+                player.mpPotions[p.id]--;
+                player.mp = Math.min(getTotalMaxMp(), player.mp + p.heal);
+                log(`🧪 <span style="color:#3498db;">[자동 MP포션]</span> ${p.name} 사용! (MP +${p.heal})`);
+                if (player.mp >= neededMp) return true;
+            }
+        }
+        return player.mp >= neededMp;
     }
 
     function battleTurn() {
         if (!currentMonster || currentMonster.hp <= 0) {
             currentMonster = spawnMonster();
-            log(`----------------------------------------\n📍 [${currentMonster.name}] 등장! (HP: ${currentMonster.hp.toLocaleString()} / 방어력: ${currentMonster.def})`);
+            log(`----------------------------------------\n📍 [${currentMonster.name}] 등장! (접두사: ${currentMonster.prefixCount}개 / HP: ${currentMonster.hp.toLocaleString()})`);
             return;
         }
 
@@ -1020,11 +1060,14 @@
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
 
+        // 스킬 사용 시 6. MP 자동 사용 기능 연동
         let skillBonusDmg = 1.0;
         const learnedActives = skillList.filter(s => s.category === "active" && s.learned);
-        if (learnedActives.length > 0 && player.mp >= 20) {
+        if (learnedActives.length > 0) {
             const randSkill = learnedActives[Math.floor(Math.random() * learnedActives.length)];
-            if (player.mp >= randSkill.costMp) {
+            
+            // MP 모자르면 포션 자동 사용 시도
+            if (autoUseMpPotionIfNeeded(randSkill.costMp)) {
                 player.mp -= randSkill.costMp;
                 skillBonusDmg = randSkill.mult + (randSkill.level * 0.4);
                 log(`✨ <span style="color:#f1c40f;">[스킬 발동] **${randSkill.name}**! (${skillBonusDmg.toFixed(1)}배 피해)</span>`);
@@ -1081,12 +1124,13 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold.toLocaleString()}G 획득!`);
 
-            if (currentMonster.type !== "normal") {
-                let cubeBaseChance = 0; let shardBaseChance = 0;
+            // 2 & 4. 접두사 수치에 따른 드랍률 상향 및 룬의 큐브 드랍
+            if (currentMonster.type !== "normal" || currentMonster.prefixCount >= 2) {
+                let cubeBaseChance = 0.02 * currentMonster.prefixCount;
+                let shardBaseChance = 0.10 * currentMonster.prefixCount;
+
                 if (currentMonster.type === "chapterBoss") {
                     cubeBaseChance = 0.50; shardBaseChance = 1.00;
-                } else if (currentMonster.type === "elite" || currentMonster.type === "named") {
-                    cubeBaseChance = 0.02; shardBaseChance = 0.10;
                 }
 
                 const totalCubeChance = cubeBaseChance + getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01);
@@ -1101,6 +1145,12 @@
                     player.shards += shardQty;
                     log(`💎 <span style="color:#00ffff;"><strong>[드랍]</strong></span> 룬 파편 +${shardQty}개 획득!`);
                 }
+            }
+
+            // 4. 아주 낮은 확률(2%)로 룬의 큐브 드랍
+            if (Math.random() < 0.02 + (currentMonster.prefixCount * 0.005)) {
+                player.runeCubes++;
+                log(`🔮 <span style="color:#9b59b6;"><strong>[희귀 드랍]</strong></span> 룬의 큐브 1개 획득!`);
             }
 
             const lootDropChance = 0.15 + getPassiveBonus("lootChanceBonus");
@@ -1188,22 +1238,31 @@
         updateUI(); saveGame();
     }
 
-    function buyPotionBulk(type, count) {
-        const totalCost = 30 * count;
-        if (player.gold < totalCost) { alert("골드가 부족합니다!"); return; }
-        player.gold -= totalCost;
-        if (type === 'hp') player.potions += count;
-        if (type === 'mp') player.mpPotions += count;
+    // 5. 6단계 포션 대량 구매 기능
+    function buyPotionTier(kind, pId) {
+        const pObj = potionTypes.find(p => p.id === pId);
+        if (!pObj) return;
+        if (player.gold < pObj.price) { alert("골드가 부족합니다!"); return; }
+        
+        player.gold -= pObj.price;
+        if (kind === 'hp') player.hpPotions[pId] = (player.hpPotions[pId] || 0) + 1;
+        else if (kind === 'mp') player.mpPotions[pId] = (player.mpPotions[pId] || 0) + 1;
+        
         updateUI(); saveGame();
     }
 
-    function usePotion(type) {
-        if (type === 'hp' && player.potions > 0) {
-            player.potions--; player.hp = Math.min(getTotalMaxHp(), player.hp + 120);
-        } else if (type === 'mp' && player.mpPotions > 0) {
-            player.mpPotions--; player.mp = Math.min(getTotalMaxMp(), player.mp + 80);
+    function useHighestHpPotion() {
+        for (let i = potionTypes.length - 1; i >= 0; i--) {
+            const p = potionTypes[i];
+            if (player.hpPotions[p.id] > 0) {
+                player.hpPotions[p.id]--;
+                player.hp = Math.min(getTotalMaxHp(), player.hp + p.heal);
+                log(`❤️ HP 포션 (${p.name}) 사용! +${p.heal} 회복`);
+                updateUI(); saveGame();
+                return;
+            }
         }
-        updateUI(); saveGame();
+        alert("사용 가능한 HP 포션이 없습니다!");
     }
 
     function buySkill(id) {
@@ -1221,13 +1280,68 @@
         updateUI(); saveGame();
     }
 
-    // 3. 룬 가방 및 중복 장착 제한 로직
+    // 1. 룬 소켓 등급 상승 기능
+    function upgradeRuneSocket() {
+        if (player.socketRarityIdx >= itemData.rarities.length - 1) {
+            alert("이미 최고 등급(신성)의 룬 소켓입니다!");
+            return;
+        }
+        const currentRarity = itemData.rarities[player.socketRarityIdx];
+        const reqShards = currentRarity.upgradeShardCost;
+
+        if (player.shards < reqShards) {
+            alert(`💎 룬 파편이 부족합니다! (필요: ${reqShards}개)`);
+            return;
+        }
+
+        player.shards -= reqShards;
+        player.socketRarityIdx++;
+        const nextRarity = itemData.rarities[player.socketRarityIdx];
+        log(`⬆️ <span class="${nextRarity.color}">[소켓 승급]</span> 룬 소켓 등급이 **[${nextRarity.name}]**(으)로 상승했습니다! (최대 ${nextRarity.maxRuneSlots}개 장착)`);
+        updateUI(); saveGame();
+    }
+
+    // 4. 룬의 큐브로 룬 옵션 변경 기능
+    function useRuneCubeOnRune(bagIdx) {
+        const rune = player.runeBag[bagIdx];
+        if (!rune) return;
+
+        const rarityObj = itemData.rarities.find(r => r.name === rune.rarity) || itemData.rarities[0];
+        const reqCubes = rarityObj.runeCubeCost || 1;
+
+        if (player.runeCubes < reqCubes) {
+            alert(`🔮 룬의 큐브가 부족합니다! (필요 수량: ${reqCubes}개)`);
+            return;
+        }
+
+        player.runeCubes -= reqCubes;
+        const newBaseRune = runeTypes[Math.floor(Math.random() * runeTypes.length)];
+        
+        rune.name = `${newBaseRune.name}의 룬`;
+        rune.stat = newBaseRune.stat;
+        rune.val = newBaseRune.baseVal * rarityObj.mult;
+        rune.unit = newBaseRune.unit;
+        rune.desc = newBaseRune.desc;
+
+        log(`🔮 룬의 큐브 ${reqCubes}개를 사용하여 룬 옵션을 **[${newBaseRune.name}의 룬]**(으)로 변경하였습니다!`);
+        updateUI(); saveGame();
+    }
+
     function renderRunes() {
-        // 장착된 룬 목록
+        const socketRarity = itemData.rarities[player.socketRarityIdx];
+        document.getElementById("socket-rarity-display").innerText = `[${socketRarity.name}]`;
+        document.getElementById("socket-rarity-display").className = socketRarity.color;
+        document.getElementById("socket-max-slots").innerText = `${socketRarity.maxRuneSlots}개`;
+        document.getElementById("socket-upgrade-cost").innerText = socketRarity.upgradeShardCost;
+
+        document.getElementById("equipped-rune-count").innerText = player.equippedRunes.length;
+        document.getElementById("equipped-rune-max").innerText = socketRarity.maxRuneSlots;
+
+        // 장착 중인 룬
         const equippedContainer = document.getElementById("equipped-runes-list");
         equippedContainer.innerHTML = "";
         if (player.equippedRunes.length === 0) {
-            equippedContainer.innerHTML = "<small style='color:#777;'>장착된 룬이 없습니다. (0/3)</small>";
+            equippedContainer.innerHTML = `<small style='color:#777;'>장착된 룬이 없습니다. (0/${socketRarity.maxRuneSlots})</small>`;
         } else {
             player.equippedRunes.forEach((rune, idx) => {
                 const div = document.createElement("div"); div.className = "rune-badge";
@@ -1242,18 +1356,22 @@
             });
         }
 
-        // 보관 중인 룬 가방 목록
+        // 보관 중인 룬 가방 (룬의 큐브 돌리기 버튼 추가)
         const invContainer = document.getElementById("inventory-runes-list");
         invContainer.innerHTML = "";
         if (player.runeBag.length === 0) {
             invContainer.innerHTML = "<small style='color:#777;'>보관 중인 룬이 없습니다.</small>";
         } else {
             player.runeBag.forEach((rune, idx) => {
+                const rarityObj = itemData.rarities.find(r => r.name === rune.rarity) || itemData.rarities[0];
                 const div = document.createElement("div"); div.className = "rune-badge";
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span class="${rune.color}">🔷 [${rune.rarity}] ${rune.name}</span>
-                        <button onclick="equipRuneFromBag(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#27ae60; min-height:28px;">장착</button>
+                        <div>
+                            <button onclick="useRuneCubeOnRune(${idx})" style="padding:2px 6px; font-size:0.7rem; background:#8e44ad; min-height:26px; margin-right:4px;">🔮 옵션 변경 (${rarityObj.runeCubeCost})</button>
+                            <button onclick="equipRuneFromBag(${idx})" style="padding:2px 8px; font-size:0.75rem; background:#27ae60; min-height:26px;">장착</button>
+                        </div>
                     </div>
                     <small style="color:#ccc;">${rune.desc}${Math.round(rune.val * 100)}${rune.unit}</small>
                 `;
@@ -1264,7 +1382,7 @@
 
     function buyRune() {
         if (player.shards < 50) { alert("💎 룬 파편이 부족합니다!"); return; }
-        if (player.runeBag.length >= player.runeBagCap) { alert("🎒 룬 가방이 가득 찼습니다! 확장하거나 정리해 주세요."); return; }
+        if (player.runeBag.length >= player.runeBagCap) { alert("🎒 룬 가방이 가득 찼습니다!"); return; }
 
         player.shards -= 50;
         const selectedRarity = itemData.rarities[Math.floor(Math.random() * itemData.rarities.length)];
@@ -1278,12 +1396,14 @@
         updateUI(); saveGame();
     }
 
-    // 3. 동일한 옵션 중복 착용 금지 판정
     function equipRuneFromBag(bagIdx) {
-        if (player.equippedRunes.length >= 3) { alert("룬은 최대 3개까지만 장착할 수 있습니다."); return; }
-        const targetRune = player.runeBag[bagIdx];
+        const maxSlots = itemData.rarities[player.socketRarityIdx].maxRuneSlots;
+        if (player.equippedRunes.length >= maxSlots) {
+            alert(`현재 룬 소켓 등급에서는 최대 ${maxSlots}개만 장착 가능합니다. (소켓을 승급하세요!)`);
+            return;
+        }
 
-        // 동일 스탯 옵션 착용 여부 체크
+        const targetRune = player.runeBag[bagIdx];
         const isDuplicate = player.equippedRunes.some(r => r.stat === targetRune.stat);
         if (isDuplicate) {
             alert(`⚠️ 이미 동일한 [${targetRune.desc.replace(' +', '')}] 옵션의 룬이 장착되어 있습니다!`);
@@ -1304,7 +1424,6 @@
         updateUI(); saveGame();
     }
 
-    // 3. 룬 가방 골드로 확장 기능 (최대 100개)
     function expandRuneBag() {
         if (player.runeBagCap >= 100) { alert("룬 가방은 최대 100개까지만 확장할 수 있습니다!"); return; }
         const cost = 500 + Math.floor((player.runeBagCap - 10) * 150);
@@ -1316,12 +1435,41 @@
         updateUI(); saveGame();
     }
 
+    function updatePotionShopUI() {
+        const hpShop = document.getElementById("hp-potion-shop");
+        const mpShop = document.getElementById("mp-potion-shop");
+        hpShop.innerHTML = ""; mpShop.innerHTML = "";
+
+        potionTypes.forEach(p => {
+            const divHp = document.createElement("div"); divHp.className = "shop-item";
+            divHp.innerHTML = `
+                <div><span>❤️ ${p.name} (${p.price}G)</span><br><small style="color:#aaa;">+${p.heal} HP</small></div>
+                <button onclick="buyPotionTier('hp', '${p.id}')" style="background:#27ae60; min-height:30px; padding:2px 8px;">구매</button>
+            `;
+            hpShop.appendChild(divHp);
+
+            const divMp = document.createElement("div"); divMp.className = "shop-item";
+            divMp.innerHTML = `
+                <div><span>🧪 ${p.name} (${p.price}G)</span><br><small style="color:#aaa;">+${p.heal} MP</small></div>
+                <button onclick="buyPotionTier('mp', '${p.id}')" style="background:#2980b9; min-height:30px; padding:2px 8px;">구매</button>
+            `;
+            mpShop.appendChild(divMp);
+        });
+
+        // 용사 상태창 포션 보유 요약
+        const hpSum = potionTypes.map(p => `${p.name}:${player.hpPotions[p.id]||0}`).join(" | ");
+        const mpSum = potionTypes.map(p => `${p.name}:${player.mpPotions[p.id]||0}`).join(" | ");
+        document.getElementById("hp-potions-summary").innerText = hpSum;
+        document.getElementById("mp-potions-summary").innerText = mpSum;
+    }
+
     function updateUI() {
         document.getElementById("p-name").innerText = player.name;
         document.getElementById("p-level").innerText = player.level;
         document.getElementById("p-gold").innerText = player.gold.toLocaleString();
         document.getElementById("p-shards").innerText = player.shards;
         document.getElementById("p-cubes").innerText = player.cubes;
+        document.getElementById("p-rune-cubes").innerText = player.runeCubes;
         document.getElementById("p-stat-pts").innerText = player.statPts;
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
@@ -1349,7 +1497,6 @@
         a.innerText = `${player.armor.name} (+${player.armor.hp})`;
         a.className = `item-hover ${player.armor.color}`;
 
-        // 4. 보조무기는 기본 공격력이 표시되지 않음
         const sub = document.getElementById("p-subweapon");
         sub.innerText = `${player.subWeapon.name}`;
         sub.className = `item-hover ${player.subWeapon.color}`;
@@ -1379,10 +1526,6 @@
         document.getElementById("hstat-cube").innerText = player.hyperCube * 1;
         document.getElementById("hstat-shard").innerText = player.hyperShard * 2;
 
-        document.getElementById("p-potions").innerText = player.potions;
-        document.getElementById("p-mp-potions").innerText = player.mpPotions;
-
-        // 3. 룬 가방 인터페이스 업데이트
         document.getElementById("rune-bag-cap").innerText = `${player.runeBag.length}/${player.runeBagCap}`;
         const expandCost = 500 + Math.floor((player.runeBagCap - 10) * 150);
         document.getElementById("rune-expand-cost").innerText = expandCost.toLocaleString();
@@ -1412,6 +1555,7 @@
         document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
         document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
 
+        updatePotionShopUI();
         renderSkillShop();
         renderSkillUpgrades();
         renderRunes();
