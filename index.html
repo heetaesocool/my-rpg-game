@@ -211,6 +211,8 @@
         .potion-qty-selector { display: flex; gap: 4px; margin-bottom: 8px; background: #111; padding: 4px; border-radius: 6px; border: 1px solid #333; }
         .potion-qty-btn { flex: 1; padding: 4px 0; font-size: 0.75rem; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; min-height: 28px; cursor: pointer; }
         .potion-qty-btn.active { background: #e67e22; color: #fff; font-weight: bold; border-color: #e67e22; }
+        
+        .stat-bar-header { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body class="mobile-mode">
@@ -276,15 +278,27 @@
                     💎 룬조각 드랍률: +<span id="p-shard-rate">0</span>% | 📦 전리품 드랍률: +<span id="p-loot-rate">0</span>%
                 </div>
 
+                <!-- 1. HP 및 MP 수치 상세화 표기 추가 (n / nn) -->
                 <div style="margin-top: 8px;">
-                    <small>체력 (HP)</small>
+                    <div class="stat-bar-header">
+                        <small>체력 (HP)</small>
+                        <small style="color:#e74c3c; font-weight:bold;" id="hp-val-text">0 / 0</small>
+                    </div>
                     <div class="bar-container"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
-                    <small>마나 (MP)</small>
+                    
+                    <div class="stat-bar-header">
+                        <small>마나 (MP)</small>
+                        <small style="color:#3498db; font-weight:bold;" id="mp-val-text">0 / 0</small>
+                    </div>
                     <div class="bar-container"><div id="mp-bar" class="bar-fill mp-fill"></div></div>
-                    <small>경험치 (EXP)</small>
+                    
+                    <div class="stat-bar-header">
+                        <small>경험치 (EXP)</small>
+                        <small style="color:#f39c12; font-weight:bold;" id="exp-val-text">0 / 0</small>
+                    </div>
                     <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill"></div></div>
                 </div>
-                <!-- 1 & 2. 크리티컬 확률 (최대 100%) 및 골드 획득량 수치 표시 추가 -->
+
                 <div style="font-size: 0.85rem; margin-top: 4px;">⚔️ 총 공격력: <span id="p-atk">15</span> | 🎯 크리티컬: <span id="p-crit">5</span>% <small style="color:#aaa;">(MAX 100%)</small></div>
                 <div style="font-size: 0.85rem;">🛡️ 총 체력: <span id="p-max-hp">100</span> | 🔮 총 마나: <span id="p-max-mp">50</span></div>
                 <div style="font-size: 0.85rem; color:#f1c40f;">💰 총 골드 획득량: +<span id="p-total-gold-bonus">0</span>%</div>
@@ -296,7 +310,7 @@
                     🔮 보조장비: <span id="p-subweapon" class="item-hover" onclick="showTooltip(event, player.subWeapon)">낡은 부적</span>
                 </div>
                 
-                <!-- 다양화된 포션 목록 UI -->
+                <!-- 포션 보유 현황 UI -->
                 <div style="margin-top: 8px;">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">❤️ HP 포션 보유 현황</div>
                     <div id="hp-potions-summary" style="font-size:0.75rem; background:#111; padding:4px 6px; border-radius:4px; margin-bottom:6px;"></div>
@@ -332,7 +346,6 @@
 
                 <hr style="border-color:#333; margin: 8px 0;">
                 <h3 style="color:#9b59b6; margin-bottom: 6px;">⚡ 하이퍼 스탯</h3>
-                <!-- 1. 하이퍼 스탯 크리티컬 확률 삭제 반영 -->
                 <div class="stat-row">
                     <span>⚔️ 데미지: +<span id="hstat-dmg">0</span>%</span>
                     <button onclick="addHyperStat('dmg')" style="background:#8e44ad;">+1 Pt</button>
@@ -652,7 +665,6 @@
         { name: "행운", stat: "critChance", baseVal: 0.03, unit: "%", desc: "크리티컬 확률 +" }
     ];
 
-    // 3 & 4. 스킬 밸런스 조정 (마력 절약 감축량 최대 50%, 보상 2배 패시브 스킬 신설)
     const skillList = [
         { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 공격하여 강력한 데미지를 줍니다." },
         { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 35, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격으로 높은 데미지를 줍니다." },
@@ -666,10 +678,7 @@
         { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 60, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률을 상승시키는 버프를 겁니다." },
         { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 150, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력을 폭발적으로 상승시킵니다." },
 
-        // 3. 마력 절약 (레벨당 2.5%, 최대 50%)
         { id: 23, category: "passive", name: "⚡ 마력 절약", statType: "mpCostReduce", valPerLevel: 0.025, maxCap: 0.50, price: 1000, costMp: 0, learned: false, level: 0, desc: "스킬 사용 시 소모되는 MP량을 지속적으로 감축시킵니다. (최대 50% 제한)" },
-        
-        // 4. 극희귀 확률 보상 2배 패시브 (레벨당 0.5%, 최대 5.0%)
         { id: 30, category: "passive", name: "🍀 풍요의 축복", statType: "doubleRewardChance", valPerLevel: 0.005, maxCap: 0.05, price: 3000, costMp: 0, learned: false, level: 0, desc: "몬스터 퇴치 시 보상(골드, EXP 등)을 2배로 획득할 확률이 생깁니다. (최대 5% 제한)" },
 
         { id: 22, category: "passive", name: "🔮 마력 증폭", statType: "mpPercent", valPerLevel: 0.10, price: 400, costMp: 0, learned: false, level: 0, desc: "상시 최대 MP 수치를 % 비율로 증가시킵니다." },
@@ -683,7 +692,6 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, costMp: 0, learned: false, level: 0, desc: "전리품 드랍 확률을 증대시킵니다." }
     ];
 
-    // 1. 하이퍼스탯 hyperCrit 프로퍼티 제거
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
         gold: 200, shards: 0, cubes: 0, runeCubes: 0, socketRarityIdx: 0,
@@ -712,11 +720,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v9", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v10", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v9");
+        const data = localStorage.getItem("tochi_rpg_save_v10");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -955,7 +963,6 @@
 
     function getRuneBonus(statName) { return player.equippedRunes.filter(r => r.stat === statName).reduce((sum, r) => sum + r.val, 0); }
 
-    // 3. 패시브 수치 상한 제한(Max Cap) 적용 로직
     function getPassiveBonus(statType) {
         const target = skillList.find(s => s.category === "passive" && s.learned && s.statType === statType);
         if (!target) return 0;
@@ -970,7 +977,6 @@
         return Math.floor(base * (1 + getPassiveBonus("atkPercent") + getRuneBonus("atkPercent") + getBuffBonus("buffAtkPercent") + (player.hyperDmg * 0.02)));
     }
 
-    // 1. 크리티컬 확률 최대 100% 제한 적용 (하이퍼스탯 제외)
     function getTotalCritChance() {
         const rawCrit = 5 + (player.dexStat * 0.2) + (player.lukStat * 0.5) + (getRuneBonus("critChance") * 100) + (getBuffBonus("buffCritPercent") * 100) + (getPassiveBonus("critChance") * 100);
         return Math.min(100, rawCrit).toFixed(1);
@@ -1239,7 +1245,6 @@
         if (currentMonster.hp <= 0) {
             log(`🟢 <strong>${currentMonster.name}</strong> 처치!`);
 
-            // 4. 보상 2배 패시브 스킬 확률 체크
             const isDoubleReward = Math.random() < getPassiveBonus("doubleRewardChance");
             const rewardMult = isDoubleReward ? 2 : 1;
 
@@ -1641,7 +1646,6 @@
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
 
-        // 2. 총 골드 획득량 합산 수치 계산
         const totalGoldRateVal = (getRuneBonus("goldBonus") + getPassiveBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100;
         const totalGoldRate = totalGoldRateVal.toFixed(1);
         const totalCubeRate = ((getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01)) * 100).toFixed(1);
@@ -1658,6 +1662,16 @@
         document.getElementById("p-max-hp").innerText = getTotalMaxHp().toLocaleString();
         document.getElementById("p-max-mp").innerText = getTotalMaxMp().toLocaleString();
         document.getElementById("p-total-gold-bonus").innerText = totalGoldRate;
+
+        // 1. HP / MP / EXP (n / nn) 상세 수치 연동
+        const curHp = Math.max(0, player.hp);
+        const maxHp = getTotalMaxHp();
+        const curMp = Math.max(0, player.mp);
+        const maxMp = getTotalMaxMp();
+
+        document.getElementById("hp-val-text").innerText = `${curHp.toLocaleString()} / ${maxHp.toLocaleString()}`;
+        document.getElementById("mp-val-text").innerText = `${curMp.toLocaleString()} / ${maxMp.toLocaleString()}`;
+        document.getElementById("exp-val-text").innerText = `${player.exp.toLocaleString()} / ${player.maxExp.toLocaleString()}`;
 
         const w = document.getElementById("p-weapon");
         w.innerText = `${player.weapon.name} (+${player.weapon.atk})`;
@@ -1688,7 +1702,6 @@
         document.getElementById("stat-int").innerText = player.intStat;
         document.getElementById("stat-luk").innerText = player.lukStat;
 
-        // 1. 하이퍼 스탯 크리티컬 확률 엘리먼트 갱신 제거
         document.getElementById("hstat-dmg").innerText = player.hyperDmg * 2;
         document.getElementById("hstat-critdmg").innerText = player.hyperCritDmg * 3;
         document.getElementById("hstat-gold").innerText = player.hyperGold * 3;
@@ -1721,8 +1734,8 @@
         document.getElementById("cost-armor").innerText = currentPrice.toLocaleString();
         document.getElementById("cost-subWeapon").innerText = currentPrice.toLocaleString();
 
-        document.getElementById("hp-bar").style.width = Math.max(0, Math.min(100, (player.hp / getTotalMaxHp()) * 100)) + "%";
-        document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
+        document.getElementById("hp-bar").style.width = Math.max(0, Math.min(100, (curHp / maxHp) * 100)) + "%";
+        document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (curMp / maxMp) * 100)) + "%";
         document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
 
         renderActiveBuffsUI();
