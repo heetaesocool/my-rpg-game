@@ -129,7 +129,7 @@
         .mp-fill { background: #3498db; }
         .exp-fill { background: #f39c12; }
         
-        button, select { 
+        button, select, input { 
             background: #34495e; 
             color: white; 
             border: none; 
@@ -459,6 +459,17 @@
         <div id="tab-shop" class="tab-content pc-full-width">
             <div class="card">
                 <h2>🏰 상점 & 스킬 센터</h2>
+                
+                <!-- 신규: 쿠폰 입력 센터 UI -->
+                <div style="background:#151515; border:1px solid #333; padding:10px; border-radius:8px; margin-bottom:12px;">
+                    <h3 style="color:#f1c40f; margin-bottom:4px;">🎁 쿠폰 입력 센터</h3>
+                    <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">쿠폰 코드를 입력하면 재화를 얻을 수 있습니다.</p>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="coupon-input" placeholder="쿠폰 코드를 입력하세요" style="flex:1; background:#222; border:1px solid #444; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.8rem; min-height:36px;">
+                        <button onclick="useCoupon()" style="background:#e67e22; padding:0 14px; min-height:36px; white-space:nowrap;">쿠폰 사용</button>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
                     <div>
                         <div class="shop-equipped-panel">
@@ -532,7 +543,7 @@
                     <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
                 </h2>
                 
-                <!-- 신규: 전투속도 배속 설정 UI -->
+                <!-- 전투속도 배속 설정 UI -->
                 <div class="speed-control-box">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-size:0.8rem; font-weight:bold; color:#f1c40f;">⏩ 전투 속도 배속 설정</span>
@@ -715,7 +726,6 @@
         { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, costMp: 0, learned: false, level: 0, desc: "전리품 드랍 확률을 증대시킵니다." }
     ];
 
-    // speedCoins: 신규 재화 추가
     let player = {
         name: "지존용사", level: 1, exp: 0, maxExp: 50,
         gold: 200, shards: 0, cubes: 0, runeCubes: 0, speedCoins: 0, socketRarityIdx: 0,
@@ -729,14 +739,14 @@
         hpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
         mpPotions: { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
         hp: 120, mp: 50,
-        equippedRunes: [], runeBag: [], runeBagCap: 10, activeBuffs: [], inventory: {}
+        equippedRunes: [], runeBag: [], runeBagCap: 10, activeBuffs: [], inventory: {}, usedCoupons: []
     };
 
     let stage = 1;
     let maxStage = 1;
     let isAutoBattling = false;
     let battleInterval = null;
-    let battleSpeed = 1; // 기본 1배속
+    let battleSpeed = 1;
     let currentMonster = null;
     let isPcMode = false;
     let currentRankingCategory = "gold";
@@ -745,11 +755,11 @@
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList, battleSpeed };
-        localStorage.setItem("tochi_rpg_save_v11", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v12", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v11");
+        const data = localStorage.getItem("tochi_rpg_save_v12");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -765,6 +775,7 @@
                 if (!player.hpPotions) player.hpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.mpPotions) player.mpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.activeBuffs) player.activeBuffs = [];
+                if (!player.usedCoupons) player.usedCoupons = [];
                 if (parsed.skillList) {
                     parsed.skillList.forEach(s => {
                         const target = skillList.find(x => x.id === s.id);
@@ -775,7 +786,49 @@
         }
     }
 
-    // 신규: 배속 설정 및 코인 차감 함수
+    // 신규: 쿠폰 사용 기능 함수
+    function useCoupon() {
+        const inputElem = document.getElementById("coupon-input");
+        const code = inputElem.value.trim();
+        if (!code) {
+            alert("쿠폰 코드를 입력해주세요!");
+            return;
+        }
+
+        if (!player.usedCoupons) player.usedCoupons = [];
+        if (player.usedCoupons.includes(code)) {
+            alert("이미 사용한 쿠폰 코드입니다!");
+            return;
+        }
+
+        if (code === "love") {
+            player.runeCubes += 10;
+            player.usedCoupons.push(code);
+            log(`🎁 <span style="color:#2ecc71;">[쿠폰 보상]</span> 'love' 쿠폰 사용! <strong>룬의 큐브 10개</strong> 획득!`);
+        } else if (code === "배속코인") {
+            player.speedCoins += 1000;
+            player.usedCoupons.push(code);
+            log(`🎁 <span style="color:#2ecc71;">[쿠폰 보상]</span> '배속코인' 쿠폰 사용! <strong>배속 코인 1,000개</strong> 획득!`);
+        } else if (code === "신규유저패키지") {
+            player.shards += 100;
+            player.gold += 50000;
+            player.cubes += 50;
+            potionTypes.forEach(p => {
+                player.hpPotions[p.id] = (player.hpPotions[p.id] || 0) + 20;
+                player.mpPotions[p.id] = (player.mpPotions[p.id] || 0) + 20;
+            });
+            player.usedCoupons.push(code);
+            log(`🎁 <span style="color:#2ecc71;">[쿠폰 보상]</span> '신규유저패키지' 쿠폰 사용! 룬파편 100개, 모든 포션 각 20개, 골드 5만, 큐브 50개 획득!`);
+        } else {
+            alert("존재하지 않거나 올바르지 않은 쿠폰 코드입니다.");
+            return;
+        }
+
+        inputElem.value = "";
+        updateUI();
+        saveGame();
+    }
+
     function setBattleSpeed(speed) {
         if (battleSpeed === speed) return;
 
@@ -1315,7 +1368,6 @@
             player.gold += earnedGold;
             log(`💰 +${earnedGold.toLocaleString()}G 획득! ${rewardMult > 1 ? '(x2배)' : ''}`);
 
-            // 신규: 낮은 확률(3%)로 배속 코인 드랍
             if (Math.random() < 0.03) {
                 const droppedCoins = (Math.floor(Math.random() * 2) + 1) * rewardMult;
                 player.speedCoins += droppedCoins;
@@ -1383,7 +1435,6 @@
         updateUI(); saveGame();
     }
 
-    // 배속 설정 속도 연동
     function toggleAutoBattle() {
         isAutoBattling = !isAutoBattling;
         const btn = document.getElementById("toggle-btn");
@@ -1779,7 +1830,6 @@
         const expandCost = 500 + Math.floor((player.runeBagCap - 10) * 150);
         document.getElementById("rune-expand-cost").innerText = expandCost.toLocaleString();
 
-        // 배속 버튼 활성화 상태 표시
         document.getElementById("btn-speed-1").className = `speed-btn ${battleSpeed === 1 ? 'active' : ''}`;
         document.getElementById("btn-speed-15").className = `speed-btn ${battleSpeed === 1.5 ? 'active' : ''}`;
         document.getElementById("btn-speed-2").className = `speed-btn ${battleSpeed === 2 ? 'active' : ''}`;
