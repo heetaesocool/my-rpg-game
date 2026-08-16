@@ -150,7 +150,7 @@
         .stage-control { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; gap: 8px; }
         .stage-btn { background: #e67e22; padding: 6px 12px; min-height: 34px; }
         
-        .shop-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 8px 10px; margin-bottom: 6px; border-radius: 6px; font-size: 0.85rem; }
+        .shop-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 8px 10px; margin-bottom: 6px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
         .shop-equipped-panel { background: #151515; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.85rem; }
         .equipped-item-box { background: #222; border-left: 3px solid #f1c40f; padding: 6px 8px; margin-top: 4px; border-radius: 4px; }
 
@@ -170,7 +170,7 @@
         .item-hover { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; display: inline-block; }
 
         /* 툴팁 모달 */
-        #item-tooltip {
+        #item-tooltip, #skill-tooltip {
             position: fixed; display: none; width: 85%; max-width: 320px; background: rgba(20, 20, 25, 0.98);
             border: 2px solid #f1c40f; border-radius: 12px; padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.9);
             z-index: 9999; font-size: 0.85rem; line-height: 1.4; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%);
@@ -183,7 +183,7 @@
         .tooltip-desc { color: #aaa; font-size: 0.75rem; margin-top: 6px; border-top: 1px solid #333; padding-top: 6px; }
 
         .rune-badge { display: block; background: #222; padding: 8px; border-radius: 6px; margin-bottom: 6px; border: 1px solid #444; font-size: 0.8rem; }
-        .buff-badge { display: inline-block; background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 2px; }
+        .buff-badge { display: inline-block; background: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; border: 1px solid #2ecc71; }
         .skill-type-tag { font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-right: 4px; }
         .tag-active { background: #e74c3c; color: #fff; }
         .tag-buff { background: #f39c12; color: #fff; }
@@ -208,7 +208,6 @@
         .rarity-guide-card { background: #181818; padding: 6px; border-radius: 6px; border: 1px solid #333; }
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
 
-        /* 1. 포션 구매 수량 조절용 패널 스타일 */
         .potion-qty-selector { display: flex; gap: 4px; margin-bottom: 8px; background: #111; padding: 4px; border-radius: 6px; border: 1px solid #333; }
         .potion-qty-btn { flex: 1; padding: 4px 0; font-size: 0.75rem; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; min-height: 28px; cursor: pointer; }
         .potion-qty-btn.active { background: #e67e22; color: #fff; font-weight: bold; border-color: #e67e22; }
@@ -216,6 +215,7 @@
 </head>
 <body class="mobile-mode">
 
+<!-- 장비 툴팁 모달 -->
 <div id="item-tooltip">
     <div class="tooltip-header">
         <div id="tt-title" class="tooltip-title">아이템 이름</div>
@@ -226,6 +226,21 @@
     <div id="tt-desc" class="tooltip-desc">설명</div>
     <div style="text-align: center; margin-top: 8px;">
         <button onclick="hideTooltip()" style="padding: 2px 10px; font-size:0.75rem;">닫기</button>
+    </div>
+</div>
+
+<!-- 3. 스킬 상세 정보 툴팁 모달 -->
+<div id="skill-tooltip">
+    <div class="tooltip-header">
+        <div id="stt-title" class="tooltip-title" style="color:#f1c40f;">스킬 이름</div>
+        <div id="stt-category" class="tooltip-rarity" style="color:#3498db;">[스킬 분류]</div>
+    </div>
+    <div id="stt-mp" class="tooltip-stat" style="color:#3498db;">🔮 소모 MP: 0</div>
+    <div id="stt-current" style="color:#2ecc71; font-weight:bold; margin-bottom:4px; font-size:0.8rem;">현재 효과: -</div>
+    <div id="stt-next" style="color:#f39c12; font-size:0.78rem; margin-bottom:6px;">다음 레벨 효과: -</div>
+    <div id="stt-desc" class="tooltip-desc">스킬 설명</div>
+    <div style="text-align: center; margin-top: 8px;">
+        <button onclick="hideSkillTooltip()" style="padding: 2px 10px; font-size:0.75rem;">닫기</button>
     </div>
 </div>
 
@@ -376,11 +391,10 @@
                 </div>
             </div>
 
-            <!-- 룬 소켓 등급 및 룬의 큐브 옵션 돌리기 추가 -->
+            <!-- 룬 소켓 등급 및 룬의 큐브 옵션 돌리기 -->
             <div class="card">
                 <h2>🔮 룬 소켓 & 룬의 큐브 시스템</h2>
                 
-                <!-- 룬 소켓 등급 상태 및 승급 UI -->
                 <div style="background:#151515; border:1px solid #333; padding:8px; border-radius:6px; margin-bottom:8px; font-size:0.85rem;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span>소켓 등급: <strong id="socket-rarity-display" class="rarity-일반">[일반]</strong></span>
@@ -404,7 +418,6 @@
                 <h3>🎒 보관 중인 룬 가방 (🔮 룬의 큐브로 옵션 변경 가능)</h3>
                 <div id="inventory-runes-list"></div>
 
-                <!-- 룬 소켓 등급 및 능력치 가이드 -->
                 <div style="margin-top: 12px; border-top: 1px solid #333; padding-top: 8px; font-size:0.75rem; color:#ccc;">
                     <strong style="color:#f1c40f;">📖 룬 소켓 등급별 혜택 가이드</strong>
                     <div class="rarity-guide-grid">
@@ -445,7 +458,6 @@
                         <button onclick="buyRandomItem('armor')" style="background:#2980b9; width: 100%; margin-bottom: 6px;">🛡️ 랜덤 방어구 (<span id="cost-armor">100</span>G)</button>
                         <button onclick="buyRandomItem('subWeapon')" style="background:#8e44ad; width: 100%; margin-bottom: 10px;">🔮 랜덤 보조장비 (<span id="cost-subWeapon">100</span>G)</button>
                         
-                        <!-- 1. 포션 상점 다량 구매 수량 컨트롤러 추가 -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                             <h3>🧪 포션 구매 수량 설정</h3>
                             <span style="font-size:0.75rem; color:#f1c40f;">선택 수량: <strong id="selected-qty-text">1개</strong></span>
@@ -467,15 +479,14 @@
                     </div>
 
                     <div>
-                        <h3>📜 스킬 배움터</h3>
-                        <div id="skill-shop-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 10px;"></div>
+                        <h3>📜 스킬 배움터 <small style="color:#aaa; font-size:0.75rem;">(클릭 시 상세 정보)</small></h3>
+                        <div id="skill-shop-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
                         
                         <h3>✨ 보유 스킬 강화</h3>
-                        <div id="skill-upgrade-list" style="max-height: 150px; overflow-y: auto;"></div>
+                        <div id="skill-upgrade-list" style="max-height: 180px; overflow-y: auto;"></div>
                     </div>
                 </div>
 
-                <!-- 등급 및 보조옵션 가이드 -->
                 <div style="margin-top: 14px; border-top: 1px solid #333; padding-top: 10px;">
                     <h3 style="color:#f1c40f;">📖 장비 등급 & 보조옵션 가이드</h3>
                     <div class="rarity-guide-grid">
@@ -487,14 +498,6 @@
                         <div class="rarity-guide-card"><span class="rarity-신화">신화</span>: 옵션 3개 (큐브 5개 소모)</div>
                         <div class="rarity-guide-card"><span class="rarity-초월">초월</span>: 옵션 4개 (큐브 6개 소모)</div>
                         <div class="rarity-guide-card"><span class="rarity-신성">신성</span>: 옵션 5개 (큐브 8개 소모)</div>
-                    </div>
-
-                    <div style="margin-top: 8px; background: #151515; padding: 8px; border-radius: 6px; font-size: 0.75rem; color: #ccc;">
-                        <strong style="color: #00ffff;">⚡ 보조 옵션 종류 및 등급별 능력 범위:</strong><br>
-                        • 💀 <strong>즉사</strong>: 일반 0% ~ 신성 2%~3% (공격 시 확률 즉사)<br>
-                        • 🩸 <strong>흡혈</strong>: 일반 0% ~ 신성 10%~16% 확률 / 피해의 10%~13% 회복<br>
-                        • ⚡ <strong>더블 어택</strong>: 일반 0% ~ 신성 10%~13% (공격 시 2배 데미지)<br>
-                        • 🔮 <strong>마나 샘</strong>: 일반 0% ~ 신성 10%~16% 확률 / MP 20~33 회복
                     </div>
                 </div>
             </div>
@@ -508,6 +511,14 @@
                     <span id="mode-indicator" style="font-size:0.85rem; color:#2ecc71;">[일반]</span>
                 </h2>
                 
+                <!-- 1. 전투 중 활성화된 버프 실시간 상태 표시 영역 -->
+                <div style="margin-bottom: 8px; background: #181818; padding: 6px 10px; border-radius: 8px; border: 1px dashed #333;">
+                    <div style="font-size:0.75rem; color:#f39c12; margin-bottom:4px; font-weight:bold;">⚡ 현재 활성화된 버프 현황:</div>
+                    <div id="battle-active-buffs" style="min-height: 22px; display: flex; flex-wrap: wrap; gap: 4px;">
+                        <span style="font-size:0.75rem; color:#777;">적용 중인 버프 없음</span>
+                    </div>
+                </div>
+
                 <div style="display: flex; justify-content: space-between; align-items: center; background: #111; padding: 6px 10px; border-radius: 8px; border: 1px solid #333; margin-bottom: 8px;">
                     <span style="font-size: 0.85rem; font-weight: bold; color: #3498db;">📖 챕터 선택:</span>
                     <select id="chapter-select" onchange="selectChapter(this.value)" style="background:#222; color:#fff; border:1px solid #444; padding:4px 8px; font-size:0.8rem; border-radius:4px;"></select>
@@ -643,26 +654,32 @@
         { name: "행운", stat: "critChance", baseVal: 0.03, unit: "%", desc: "크리티컬 확률 +" }
     ];
 
+    // 2 & 3. 스킬 가격 비례 MP 소모량 재정립 및 신규 패시브 3종 추가
     const skillList = [
-        { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 피해를 줍니다." },
-        { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 30, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격 피해" },
-        { id: 2, category: "active", name: "🩸 흡혈 베기", costMp: 25, mult: 2.0, price: 800, learned: false, level: 0, desc: "피해를 주고 HP 일부 회복" },
-        { id: 3, category: "active", name: "❄️ 프로스트 노바", costMp: 35, mult: 3.0, price: 1200, learned: false, level: 0, desc: "얼음 파동 폭발 피해" },
-        { id: 4, category: "active", name: "☄️ 메테오 스트라이크", costMp: 60, mult: 5.5, price: 2500, learned: false, level: 0, desc: "운석을 떨어뜨려 치명적인 피해" },
-        { id: 5, category: "active", name: "⚔️ 궁극: 십자베기", costMp: 80, mult: 8.0, price: 5000, learned: false, level: 0, desc: "빛의 속도로 교차 공격" },
+        { id: 0, category: "active", name: "🔥 파이어 볼", costMp: 15, mult: 2.2, price: 150, learned: false, level: 0, desc: "화염구로 공격하여 강력한 데미지를 줍니다." },
+        { id: 1, category: "active", name: "⚡ 라이트닝 볼트", costMp: 35, mult: 3.5, price: 500, learned: false, level: 0, desc: "강력한 번개 일격으로 높은 데미지를 줍니다." },
+        { id: 2, category: "active", name: "🩸 흡혈 베기", costMp: 50, mult: 2.0, price: 800, learned: false, level: 0, desc: "적을 베어 피해를 주고 HP를 일부 회복합니다." },
+        { id: 3, category: "active", name: "❄️ 프로스트 노바", costMp: 70, mult: 3.0, price: 1200, learned: false, level: 0, desc: "얼음 파동 폭발로 광역 피해를 줍니다." },
+        { id: 4, category: "active", name: "☄️ 메테오 스트라이크", costMp: 110, mult: 5.5, price: 2500, learned: false, level: 0, desc: "거대한 운석을 떨어뜨려 치명적인 피해를 줍니다." },
+        { id: 5, category: "active", name: "⚔️ 궁극: 십자베기", costMp: 200, mult: 8.0, price: 5000, learned: false, level: 0, desc: "빛의 속도로 교차 공격하여 괴멸적인 피해를 줍니다." },
         
-        { id: 10, category: "buff", name: "⚔️ 분노의 포효", costMp: 35, duration: 5, buffAtkPercent: 0.20, price: 400, learned: false, level: 0, desc: "5턴 동안 공격력 상승 버프" },
-        { id: 11, category: "buff", name: "🛡️ 수호자의 의지", costMp: 30, duration: 5, buffHpPercent: 0.25, price: 600, learned: false, level: 0, desc: "5턴 동안 최대 HP 수치 증가" },
-        { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 40, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률 상승" },
-        { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 70, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력 폭발적 상승" },
+        { id: 10, category: "buff", name: "⚔️ 분노의 포효", costMp: 25, duration: 5, buffAtkPercent: 0.20, price: 400, learned: false, level: 0, desc: "5턴 동안 공격력을 상승시키는 전투 버프를 겁니다." },
+        { id: 11, category: "buff", name: "🛡️ 수호자의 의지", costMp: 40, duration: 5, buffHpPercent: 0.25, price: 600, learned: false, level: 0, desc: "5턴 동안 최대 HP 수치를 늘려주는 버프를 겁니다." },
+        { id: 12, category: "buff", name: "👁️ 집중의 시선", costMp: 60, duration: 5, buffCritPercent: 0.15, price: 900, learned: false, level: 0, desc: "5턴 동안 크리티컬 확률을 상승시키는 버프를 겁니다." },
+        { id: 13, category: "buff", name: "⚡ 광신의 영역", costMp: 150, duration: 5, buffAtkPercent: 0.50, price: 3500, learned: false, level: 0, desc: "5턴 동안 공격력을 폭발적으로 상승시킵니다." },
 
-        { id: 20, category: "passive", name: "🏋️ 단련된 육체", statType: "hpPercent", valPerLevel: 0.08, price: 300, learned: false, level: 0, desc: "상시 최대 HP 증가" },
-        { id: 21, category: "passive", name: "🗡️ 날카로운 칼날", statType: "atkPercent", valPerLevel: 0.05, price: 500, learned: false, level: 0, desc: "상시 공격력 증가" },
-        { id: 25, category: "passive", name: "📖 지식 탐구", statType: "expBonus", valPerLevel: 0.10, price: 600, learned: false, level: 0, desc: "경험치 획득량 증가" },
-        { id: 26, category: "passive", name: "💎 룬 감지", statType: "shardChanceBonus", valPerLevel: 0.05, price: 800, learned: false, level: 0, desc: "룬 조각 드랍 확률 증가" },
-        { id: 27, category: "passive", name: "🏺 파편 수집가", statType: "shardAmountBonus", valPerLevel: 1.0, price: 1200, learned: false, level: 0, desc: "룬 조각 드랍 수량 증가" },
-        { id: 28, category: "passive", name: "🧊 차원의 감각", statType: "cubeChanceBonus", valPerLevel: 0.01, price: 2000, learned: false, level: 0, desc: "큐브 드랍 확률 증가" },
-        { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, learned: false, level: 0, desc: "전리품 드랍 확률 증가" }
+        // 2. 신규 패시브 스킬 추가 (MP증가, MP소모감소, 골드증가)
+        { id: 22, category: "passive", name: "🔮 마력 증폭", statType: "mpPercent", valPerLevel: 0.10, price: 400, costMp: 0, learned: false, level: 0, desc: "상시 최대 MP 수치를 % 비율로 증가시킵니다." },
+        { id: 23, category: "passive", name: "⚡ 마력 절약", statType: "mpCostReduce", valPerLevel: 0.05, price: 1000, costMp: 0, learned: false, level: 0, desc: "스킬 사용 시 소모되는 MP량을 지속적으로 감축시킵니다." },
+        { id: 24, category: "passive", name: "💰 황금의 눈", statType: "goldBonus", valPerLevel: 0.10, price: 700, costMp: 0, learned: false, level: 0, desc: "몬스터 처치 시 획득하는 골드를 대폭 증대시킵니다." },
+
+        { id: 20, category: "passive", name: "🏋️ 단련된 육체", statType: "hpPercent", valPerLevel: 0.08, price: 300, costMp: 0, learned: false, level: 0, desc: "상시 최대 HP를 증대시킵니다." },
+        { id: 21, category: "passive", name: "🗡️ 날카로운 칼날", statType: "atkPercent", valPerLevel: 0.05, price: 500, costMp: 0, learned: false, level: 0, desc: "상시 공격력을 증대시킵니다." },
+        { id: 25, category: "passive", name: "📖 지식 탐구", statType: "expBonus", valPerLevel: 0.10, price: 600, costMp: 0, learned: false, level: 0, desc: "경험치 획득량을 증대시킵니다." },
+        { id: 26, category: "passive", name: "💎 룬 감지", statType: "shardChanceBonus", valPerLevel: 0.05, price: 800, costMp: 0, learned: false, level: 0, desc: "룬 조각 드랍 확률을 높여줍니다." },
+        { id: 27, category: "passive", name: "🏺 파편 수집가", statType: "shardAmountBonus", valPerLevel: 1.0, price: 1200, costMp: 0, learned: false, level: 0, desc: "드랍되는 룬 조각의 개수를 늘려줍니다." },
+        { id: 28, category: "passive", name: "🧊 차원의 감각", statType: "cubeChanceBonus", valPerLevel: 0.01, price: 2000, costMp: 0, learned: false, level: 0, desc: "큐브 드랍 확률을 높여줍니다." },
+        { id: 29, category: "passive", name: "📦 전리품 탐지", statType: "lootChanceBonus", valPerLevel: 0.05, price: 1500, costMp: 0, learned: false, level: 0, desc: "전리품 드랍 확률을 증대시킵니다." }
     ];
 
     let player = {
@@ -689,17 +706,15 @@
     let isPcMode = false;
     let currentRankingCategory = "gold";
     let activeTooltipItem = null;
-    
-    // 1. 선택된 포션 구매 수량 전역 변수 (기본 1개)
     let selectedPotionBuyQty = 1;
 
     function saveGame() {
         const saveData = { player, stage, maxStage, skillList };
-        localStorage.setItem("tochi_rpg_save_v7", JSON.stringify(saveData));
+        localStorage.setItem("tochi_rpg_save_v8", JSON.stringify(saveData));
     }
 
     function loadGame() {
-        const data = localStorage.getItem("tochi_rpg_save_v7");
+        const data = localStorage.getItem("tochi_rpg_save_v8");
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -712,6 +727,7 @@
                 if (!player.runeCubes) player.runeCubes = 0;
                 if (!player.hpPotions) player.hpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
                 if (!player.mpPotions) player.mpPotions = { p1: 2, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 };
+                if (!player.activeBuffs) player.activeBuffs = [];
                 if (parsed.skillList) {
                     parsed.skillList.forEach(s => {
                         const target = skillList.find(x => x.id === s.id);
@@ -847,6 +863,57 @@
     }
 
     function hideTooltip() { document.getElementById("item-tooltip").style.display = "none"; activeTooltipItem = null; }
+
+    // 3. 스킬 상세 정보 툴팁 표시 함수
+    function showSkillTooltip(event, sk) {
+        if (!sk) return;
+        if (event) event.stopPropagation();
+        const tooltip = document.getElementById("skill-tooltip");
+        
+        document.getElementById("stt-title").innerText = `${sk.name} ${sk.level > 0 ? '(Lv.' + sk.level + ')' : ''}`;
+        
+        const catMap = { active: '⚔️ 액티브 공격', buff: '⚡ 전투 버프', passive: '🔮 패시브' };
+        document.getElementById("stt-category").innerText = `[${catMap[sk.category] || sk.category}]`;
+        
+        const mpReduce = getPassiveBonus("mpCostReduce");
+        const finalCost = sk.costMp > 0 ? Math.max(1, Math.floor(sk.costMp * (1 - mpReduce))) : 0;
+        document.getElementById("stt-mp").innerText = sk.costMp > 0 ? `🔮 소모 MP: ${finalCost} (기본: ${sk.costMp})` : "🔮 소모 MP: 없음 (패시브)";
+
+        let currentText = "미습득";
+        let nextText = "";
+
+        if (sk.category === "active") {
+            const mult = sk.mult + (sk.level * 0.4);
+            currentText = sk.level > 0 ? `공격력의 ${mult.toFixed(1)}배 피해` : "미습득";
+            nextText = `다음 레벨 (+1): 공격력의 ${(mult + 0.4).toFixed(1)}배 피해 (데미지 +0.4배)`;
+        } else if (sk.category === "buff") {
+            if (sk.buffAtkPercent) {
+                const val = (sk.buffAtkPercent + (sk.level * 0.05)) * 100;
+                currentText = sk.level > 0 ? `5턴간 공격력 +${val.toFixed(0)}% 상승` : "미습득";
+                nextText = `다음 레벨 (+1): 5턴간 공격력 +${(val + 5).toFixed(0)}% 상승 (+5%)`;
+            } else if (sk.buffHpPercent) {
+                const val = (sk.buffHpPercent + (sk.level * 0.05)) * 100;
+                currentText = sk.level > 0 ? `5턴간 최대 HP +${val.toFixed(0)}% 상승` : "미습득";
+                nextText = `다음 레벨 (+1): 5턴간 최대 HP +${(val + 5).toFixed(0)}% 상승 (+5%)`;
+            } else if (sk.buffCritPercent) {
+                const val = (sk.buffCritPercent + (sk.level * 0.03)) * 100;
+                currentText = sk.level > 0 ? `5턴간 크리티컬 확률 +${val.toFixed(0)}% 상승` : "미습득";
+                nextText = `다음 레벨 (+1): 5턴간 크리티컬 확률 +${(val + 3).toFixed(0)}% 상승 (+3%)`;
+            }
+        } else if (sk.category === "passive") {
+            const val = (sk.valPerLevel * sk.level) * 100;
+            currentText = sk.level > 0 ? `상시 효과 +${val.toFixed(0)}%` : "미습득";
+            nextText = `다음 레벨 (+1): 상시 효과 +${(val + (sk.valPerLevel * 100)).toFixed(0)}% (+${(sk.valPerLevel * 100).toFixed(0)}%)`;
+        }
+
+        document.getElementById("stt-current").innerText = `현재 효과: ${currentText}`;
+        document.getElementById("stt-next").innerText = nextText;
+        document.getElementById("stt-desc").innerText = sk.desc;
+
+        tooltip.style.display = "block";
+    }
+
+    function hideSkillTooltip() { document.getElementById("skill-tooltip").style.display = "none"; }
 
     function useCubeOnOption(optIdx) {
         if (!activeTooltipItem || !activeTooltipItem.effects[optIdx]) return;
@@ -991,11 +1058,9 @@
         updateUI(); saveGame();
     }
 
-    // 2. 접두사 붙는 몬스터 등장 확률 하향 조절 (체감 난이도 완화)
     function spawnMonster() {
         const isChapterBoss = stage % 10 === 0;
         
-        // 접두사 개수 확률 조정 (1개: 75%, 2개: 18%, 3개: 5%, 4개: 2%)
         const prefixRand = Math.random();
         let prefixCount = 1;
         if (prefixRand < 0.75) prefixCount = 1;
@@ -1070,6 +1135,7 @@
         return player.mp >= neededMp;
     }
 
+    // 1. 전투 턴 처리 중 액티브 및 버프 스킬 시전 로직
     function battleTurn() {
         if (!currentMonster || currentMonster.hp <= 0) {
             currentMonster = spawnMonster();
@@ -1077,19 +1143,45 @@
             return;
         }
 
+        // 버프 지속시간 감소 처리
         player.activeBuffs.forEach(b => b.duration--);
         player.activeBuffs = player.activeBuffs.filter(b => b.duration > 0);
         player.mp = Math.min(getTotalMaxMp(), player.mp + 5);
 
         let skillBonusDmg = 1.0;
-        const learnedActives = skillList.filter(s => s.category === "active" && s.learned);
-        if (learnedActives.length > 0) {
-            const randSkill = learnedActives[Math.floor(Math.random() * learnedActives.length)];
+        const learnedCastables = skillList.filter(s => (s.category === "active" || s.category === "buff") && s.learned);
+        
+        if (learnedCastables.length > 0) {
+            const randSkill = learnedCastables[Math.floor(Math.random() * learnedCastables.length)];
             
-            if (autoUseMpPotionIfNeeded(randSkill.costMp)) {
-                player.mp -= randSkill.costMp;
-                skillBonusDmg = randSkill.mult + (randSkill.level * 0.4);
-                log(`✨ <span style="color:#f1c40f;">[스킬 발동] **${randSkill.name}**! (${skillBonusDmg.toFixed(1)}배 피해)</span>`);
+            // 2. MP 소모 감소 패시브 효과 적용
+            const mpReduce = getPassiveBonus("mpCostReduce");
+            const finalCostMp = Math.max(1, Math.floor(randSkill.costMp * (1 - mpReduce)));
+
+            if (autoUseMpPotionIfNeeded(finalCostMp)) {
+                player.mp -= finalCostMp;
+                
+                if (randSkill.category === "buff") {
+                    const existingBuffIdx = player.activeBuffs.findIndex(b => b.id === randSkill.id);
+                    const buffObj = {
+                        id: randSkill.id,
+                        name: randSkill.name,
+                        duration: randSkill.duration,
+                        buffAtkPercent: randSkill.buffAtkPercent ? randSkill.buffAtkPercent + (randSkill.level * 0.05) : 0,
+                        buffHpPercent: randSkill.buffHpPercent ? randSkill.buffHpPercent + (randSkill.level * 0.05) : 0,
+                        buffCritPercent: randSkill.buffCritPercent ? randSkill.buffCritPercent + (randSkill.level * 0.03) : 0
+                    };
+                    
+                    if (existingBuffIdx >= 0) {
+                        player.activeBuffs[existingBuffIdx] = buffObj;
+                    } else {
+                        player.activeBuffs.push(buffObj);
+                    }
+                    log(`✨ <span style="color:#f39c12;">[버프 시전] **${randSkill.name}** 발동! (${randSkill.duration}턴 지속)</span>`);
+                } else {
+                    skillBonusDmg = randSkill.mult + (randSkill.level * 0.4);
+                    log(`✨ <span style="color:#f1c40f;">[스킬 발동] **${randSkill.name}**! (${skillBonusDmg.toFixed(1)}배 피해)</span>`);
+                }
             }
         }
 
@@ -1139,7 +1231,9 @@
             log(`🟢 <strong>${currentMonster.name}</strong> 처치!`);
             const lukGoldBonus = 1 + (player.lukStat * 0.005);
             const hyperGoldBonus = 1 + (player.hyperGold * 0.03);
-            const earnedGold = Math.floor(currentMonster.goldReward * (1 + getRuneBonus("goldBonus")) * lukGoldBonus * hyperGoldBonus);
+            
+            // 2. 골드 증가 패시브 연동
+            const earnedGold = Math.floor(currentMonster.goldReward * (1 + getRuneBonus("goldBonus") + getPassiveBonus("goldBonus")) * lukGoldBonus * hyperGoldBonus);
             player.gold += earnedGold;
             log(`💰 +${earnedGold.toLocaleString()}G 획득!`);
 
@@ -1255,7 +1349,6 @@
         updateUI(); saveGame();
     }
 
-    // 1. 선택 수량 버튼 클릭 제어 함수
     function setPotionBuyQty(qty, btn) {
         selectedPotionBuyQty = qty;
         document.querySelectorAll('.potion-qty-btn').forEach(b => b.classList.remove('active'));
@@ -1263,7 +1356,6 @@
         document.getElementById("selected-qty-text").innerText = `${qty}개`;
     }
 
-    // 1. 선택된 수량만큼 여러 개 포션 구매 처리
     function buyPotionTier(kind, pId) {
         const pObj = potionTypes.find(p => p.id === pId);
         if (!pObj) return;
@@ -1302,6 +1394,7 @@
         const sk = skillList.find(s => s.id === id);
         if (!sk || sk.learned || player.gold < sk.price) return;
         player.gold -= sk.price; sk.learned = true; sk.level = 1;
+        log(`📜 스킬 **[${sk.name}]** 습득 완료!`);
         updateUI(); saveGame();
     }
 
@@ -1310,6 +1403,7 @@
         const upgradeCost = (sk.level) * 30 + 30;
         if (!sk || player.shards < upgradeCost) return;
         player.shards -= upgradeCost; sk.level++;
+        log(`✨ 스킬 **[${sk.name}]** Lv.${sk.level} 강화 완료!`);
         updateUI(); saveGame();
     }
 
@@ -1333,7 +1427,6 @@
         updateUI(); saveGame();
     }
 
-    // 3. 각각의 룬을 룬의 큐브로 옵션 돌리는 기능 (등급별 차등 개수 반영)
     function useRuneCubeOnRune(bagIdx) {
         const rune = player.runeBag[bagIdx];
         if (!rune) return;
@@ -1465,7 +1558,6 @@
         updateUI(); saveGame();
     }
 
-    // 1. 동적 수량이 반영된 포션 상점 UI 렌더링
     function updatePotionShopUI() {
         const hpShop = document.getElementById("hp-potion-shop");
         const mpShop = document.getElementById("mp-potion-shop");
@@ -1497,6 +1589,30 @@
         document.getElementById("mp-potions-summary").innerText = mpSum;
     }
 
+    // 1. 활성화된 버프 현황 UI 렌더링
+    function renderActiveBuffsUI() {
+        const statusContainer = document.getElementById("active-buffs-list");
+        const battleContainer = document.getElementById("battle-active-buffs");
+        
+        statusContainer.innerHTML = "";
+        battleContainer.innerHTML = "";
+
+        if (player.activeBuffs.length === 0) {
+            battleContainer.innerHTML = `<span style="font-size:0.75rem; color:#777;">적용 중인 버프 없음</span>`;
+            return;
+        }
+
+        player.activeBuffs.forEach(buff => {
+            const span1 = document.createElement("span"); span1.className = "buff-badge";
+            span1.innerText = `${buff.name} (${buff.duration}턴)`;
+            statusContainer.appendChild(span1);
+
+            const span2 = document.createElement("span"); span2.className = "buff-badge";
+            span2.innerText = `${buff.name} (${buff.duration}턴 남음)`;
+            battleContainer.appendChild(span2);
+        });
+    }
+
     function updateUI() {
         document.getElementById("p-name").innerText = player.name;
         document.getElementById("p-level").innerText = player.level;
@@ -1508,7 +1624,7 @@
         document.getElementById("p-hyper-pts").innerText = player.hyperPts;
         document.getElementById("p-max-dmg").innerText = (player.maxDmg || 0).toLocaleString();
 
-        const totalGoldRate = ((getRuneBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100).toFixed(1);
+        const totalGoldRate = ((getRuneBonus("goldBonus") + getPassiveBonus("goldBonus") + (player.lukStat * 0.005) + (player.hyperGold * 0.03)) * 100).toFixed(1);
         const totalCubeRate = ((getPassiveBonus("cubeChanceBonus") + (player.hyperCube * 0.01)) * 100).toFixed(1);
         const totalShardRate = ((getPassiveBonus("shardChanceBonus") + (player.hyperShard * 0.02)) * 100).toFixed(1);
         const totalLootRate = ((0.15 + getPassiveBonus("lootChanceBonus")) * 100).toFixed(1);
@@ -1589,6 +1705,7 @@
         document.getElementById("mp-bar").style.width = Math.max(0, Math.min(100, (player.mp / getTotalMaxMp()) * 100)) + "%";
         document.getElementById("exp-bar").style.width = Math.max(0, Math.min(100, (player.exp / player.maxExp * 100))) + "%";
 
+        renderActiveBuffsUI();
         updatePotionShopUI();
         renderSkillShop();
         renderSkillUpgrades();
@@ -1596,30 +1713,51 @@
         renderLootInventory();
     }
 
+    // 3. 스킬 상점 및 툴팁 바인딩
     function renderSkillShop() {
         const container = document.getElementById("skill-shop-list");
         container.innerHTML = "";
+        const mpReduce = getPassiveBonus("mpCostReduce");
+
         skillList.forEach(sk => {
             const div = document.createElement("div"); div.className = "shop-item";
+            div.onclick = (e) => showSkillTooltip(e, sk);
+            
+            const finalCost = sk.costMp > 0 ? Math.max(1, Math.floor(sk.costMp * (1 - mpReduce))) : 0;
+            const mpText = sk.costMp > 0 ? `<small style="color:#3498db;">(MP ${finalCost})</small>` : '';
+
             div.innerHTML = `
                 <div>
-                    <span class="skill-type-tag tag-${sk.category}">${sk.category}</span><strong>${sk.name}</strong><br>
-                    <small style="color:#888;">${sk.desc}</small>
+                    <span class="skill-type-tag tag-${sk.category}">${sk.category}</span><strong>${sk.name}</strong> ${mpText}<br>
+                    <small style="color:#888;">${sk.desc.length > 20 ? sk.desc.substring(0,20) + '...' : sk.desc}</small>
                 </div>
-                <button onclick="buySkill(${sk.id})" ${sk.learned ? "disabled" : ""}>${sk.learned ? "습득완료" : sk.price + 'G'}</button>
+                <button onclick="event.stopPropagation(); buySkill(${sk.id})" ${sk.learned ? "disabled" : ""}>${sk.learned ? "습득완료" : sk.price + 'G'}</button>
             `;
             container.appendChild(div);
         });
     }
 
+    // 3. 스킬 강화 및 툴팁 바인딩
     function renderSkillUpgrades() {
         const container = document.getElementById("skill-upgrade-list");
         container.innerHTML = "";
-        skillList.filter(s => s.learned).forEach(sk => {
+        const learnedSkills = skillList.filter(s => s.learned);
+
+        if (learnedSkills.length === 0) {
+            container.innerHTML = "<small style='color:#777;'>습득한 스킬이 없습니다.</small>";
+            return;
+        }
+
+        learnedSkills.forEach(sk => {
             const div = document.createElement("div"); div.className = "shop-item";
+            div.onclick = (e) => showSkillTooltip(e, sk);
+
             div.innerHTML = `
-                <div><strong>${sk.name} (+${sk.level})</strong></div>
-                <button onclick="upgradeSkill(${sk.id})">강화 (💎 ${(sk.level)*30+30})</button>
+                <div>
+                    <strong>${sk.name} (+${sk.level})</strong><br>
+                    <small style="color:#aaa;">💡 스킬 정보 보기</small>
+                </div>
+                <button onclick="event.stopPropagation(); upgradeSkill(${sk.id})">강화 (💎 ${(sk.level)*30+30})</button>
             `;
             container.appendChild(div);
         });
